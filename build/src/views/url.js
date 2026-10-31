@@ -11,6 +11,8 @@ export default {
   id: 'url',
   title: 'URL',
   group: 'Encode',
+  icon: 'link',
+  color: '#0ea5e9',
   description: 'Split a URL into parts and query, or percent-encode text',
   keywords: ['uri', 'query', 'percent', 'encodeURIComponent', 'params', 'link'],
   create() {

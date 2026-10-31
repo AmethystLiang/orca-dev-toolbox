@@ -22,13 +22,23 @@ test('recognises each kind of pasted value', () => {
     ['@daily', 'cron'],
     ['SGVsbG8sIHdvcmxkIQ==', 'base64'],
     ['WGluIGNow6BvIPCfkYs', 'base64'],
-    ['018f3c1e-7b2a-7c00-8a00-123456789abc', 'ids']
+    ['018f3c1e-7b2a-7c00-8a00-123456789abc', 'ids'],
+    ['#3b82f6', 'color'],
+    ['#fff', 'color'],
+    ['rgb(59 130 246 / 50%)', 'color'],
+    ['oklch(62% 0.19 260)', 'color'],
+    ['0xdeadbeef', 'number'],
+    ['0b1010_1010', 'number'],
+    ['-rwxr-xr-x', 'chmod'],
+    ['rw-r--r--', 'chmod'],
+    ['&lt;div class=&quot;x&quot;&gt;', 'escape'],
+    ['Xin ch\\u00e0o', 'escape']
   ]
   for (const [value, tool] of cases) assert.equal(detect(value), tool, value)
 })
 
 test('leaves ordinary words and broken values to the search', () => {
-  for (const value of ['', '   ', 'json', 'password', 'base64 encode', '{not json', 'hash', '12345', 'eyJhbGciOi']) {
+  for (const value of ['', '   ', 'json', 'password', 'base64 encode', '{not json', 'hash', '12345', 'eyJhbGciOi', '#hashtag', 'rgb', 'Tom & Jerry']) {
     assert.equal(detect(value), null, value)
   }
 })

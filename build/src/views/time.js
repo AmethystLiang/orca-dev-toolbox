@@ -5,6 +5,8 @@ export default {
   id: 'time',
   title: 'Timestamp',
   group: 'Inspect',
+  icon: 'clock',
+  color: '#3b82f6',
   description: 'Unix time ↔ local, UTC and ISO dates',
   keywords: ['unix', 'epoch', 'date', 'iso', 'utc', 'timezone', 'milliseconds'],
   create() {

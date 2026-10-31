@@ -1,0 +1,34 @@
+// Line icons on a 24px grid, drawn for this panel. Each tool names one in its `icon` field.
+const ICONS = {
+  key: '<circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3M16.5 6.5l3 3M14 9l2 2"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+  repeat: '<path d="m17 2 4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="m7 22-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>',
+  swap: '<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+  code: '<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/><path d="m14.5 4-5 16"/>',
+  droplet: '<path d="M12 2.7s-6.5 6.6-6.5 11.6a6.5 6.5 0 0 0 13 0c0-5-6.5-11.6-6.5-11.6z"/><path d="M8.8 14.5a3.3 3.3 0 0 0 3.2 3"/>',
+  binary: '<rect x="4" y="4" width="5" height="7" rx="2"/><rect x="15" y="13" width="5" height="7" rx="2"/><path d="M15 4h2v7M15 11h4"/><path d="M5 13h2v7M5 20h4"/>',
+  lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><path d="M12 15v2"/>',
+  dice: '<rect x="3" y="3" width="18" height="18" rx="3"/><g class="dots"><circle cx="8" cy="8" r="1.4"/><circle cx="16" cy="8" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="8" cy="16" r="1.4"/><circle cx="16" cy="16" r="1.4"/></g>',
+  hash: '<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>',
+  braces: '<path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5a2 2 0 0 0 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5a2 2 0 0 1 2-2 2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/>',
+  regex: '<path d="M17 3v10M12.7 5.5l8.6 5M12.7 10.5l8.6-5"/><rect x="3" y="15" width="6" height="6" rx="1.5"/>',
+  diff: '<path d="M12 3v12M6 9h12"/><path d="M6 20h12"/>',
+  type: '<path d="M4 7V5h16v2"/><path d="M12 5v14M9 19h6"/>',
+  lines: '<path d="M3 6h11M3 12h11M3 18h7"/><path d="m21 15-3 3-3-3M18 6v12"/>',
+  gauge: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>'
+}
+
+/** An inline SVG element for `name`; it takes the text colour. */
+export function icon(name, className = 'icon') {
+  const holder = document.createElement('span')
+  holder.className = className
+  holder.setAttribute('aria-hidden', 'true')
+  holder.innerHTML =
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" ' +
+    `stroke-linecap="round" stroke-linejoin="round">${ICONS[name] ?? ICONS.wrench}</svg>`
+  return holder
+}
+
+export const ICON_NAMES = Object.keys(ICONS)

@@ -5,6 +5,8 @@ export default {
   id: 'json',
   title: 'JSON Formatter',
   group: 'Text',
+  icon: 'braces',
+  color: '#eab308',
   description: 'Validate, pretty-print, minify and sort JSON',
   keywords: ['format', 'prettify', 'beautify', 'minify', 'validate', 'lint', 'sort'],
   create() {

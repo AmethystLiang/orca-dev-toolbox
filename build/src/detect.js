@@ -10,6 +10,11 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2
 const URL_LIKE = /^[a-z][a-z0-9+.-]*:\/\/\S+$/i
 const PERCENT = /%[0-9a-f]{2}/i
 const BASE64 = /^[A-Za-z0-9+/_-]{8,}={0,2}$/
+const HEX_COLOR = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i
+const COLOR_FN = /^(rgba?|hsla?|oklch)\([^()]*\)$/i
+const PREFIXED_NUMBER = /^-?0(x[0-9a-f_]+|b[01_]+|o[0-7_]+)$/i
+const SYMBOLIC_MODE = /^[-dl]?[r-][w-][xsS-][r-][w-][xsS-][r-][w-][xtT-]$/
+const ESCAPED = /&(#\d+|#x[0-9a-f]+|[a-z]+\d*);|\\u(\{[0-9a-f]+\}|[0-9a-f]{4})/i
 
 function isJson(text) {
   if (!/^[[{]/.test(text)) return false
@@ -48,10 +53,14 @@ export function detect(value) {
   if (JWT.test(text)) return 'jwt'
   if (UUID.test(text)) return 'ids'
   if (TIMESTAMP.test(text) || ISO_DATE.test(text)) return 'time'
+  if (HEX_COLOR.test(text) || COLOR_FN.test(text)) return 'color'
+  if (PREFIXED_NUMBER.test(text)) return 'number'
+  if (SYMBOLIC_MODE.test(text)) return 'chmod'
   if (isJson(text)) return 'json'
   if (URL_LIKE.test(text)) return 'url'
   if (isCron(text)) return 'cron'
   if (!/\s/.test(text) && PERCENT.test(text)) return 'url'
   if (isBase64Text(text)) return 'base64'
+  if (ESCAPED.test(text)) return 'escape'
   return null
 }

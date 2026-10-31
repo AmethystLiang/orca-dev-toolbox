@@ -6,6 +6,8 @@ export default {
   id: 'hash',
   title: 'Hash & HMAC',
   group: 'Generate',
+  icon: 'hash',
+  color: '#84cc16',
   description: 'MD5, SHA-1, SHA-256, SHA-512, and HMAC with a key',
   keywords: ['md5', 'sha', 'sha1', 'sha256', 'sha512', 'digest', 'checksum', 'hmac', 'signature', 'webhook'],
   create() {

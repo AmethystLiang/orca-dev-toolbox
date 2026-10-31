@@ -2,9 +2,12 @@
 // per tool. Tools are built on first use and kept, so their inputs survive switching back and forth.
 import { detect } from './detect.js'
 import { GROUPS, searchTools, TOOLS } from './registry.js'
+import { icon } from './icons.js'
 import { h, set } from './ui.js'
 
 const RECENT_LIMIT = 3
+// What a pasted value is, where the tool's title does not say it.
+const LOOKS_LIKE = { jwt: 'a JWT', time: 'a timestamp', ids: 'a UUID', json: 'JSON', url: 'a URL', cron: 'a cron schedule', base64: 'Base64', color: 'a colour', number: 'a number', chmod: 'a file mode', escape: 'escaped text' }
 const byId = new Map(TOOLS.map((tool) => [tool.id, tool]))
 const built = new Map()
 
@@ -35,14 +38,24 @@ const home = h('div', { class: 'home' }, h('div', { class: 'search-wrap' }, sear
 const back = h('button', { type: 'button', class: 'back', 'aria-label': 'All tools', title: 'All tools (Esc)' }, '‹')
 const title = h('h1', { class: 'title' })
 const subtitle = h('p', { class: 'subtitle' })
-const header = h('header', { class: 'tool-header', hidden: true }, back, h('div', { class: 'heading' }, title, subtitle))
+const headerTile = h('span', { class: 'tile-slot' })
+const header = h('header', { class: 'tool-header', hidden: true }, back, headerTile, h('div', { class: 'heading' }, title, subtitle))
 const views = h('main', { class: 'views' })
 document.getElementById('app').append(header, home, views)
 
+/** The tool's icon on a tile tinted with its colour. */
+function tile(tool, size = '') {
+  const node = icon(tool.icon, `tile ${size}`)
+  node.style.setProperty('--tone', tool.color)
+  return node
+}
+
 function toolButton(tool) {
   return h('button', { type: 'button', class: 'tool-item', 'data-tool': tool.id, onclick: () => open(tool.id) },
-    h('span', { class: 'tool-name' }, tool.title),
-    h('span', { class: 'tool-desc' }, tool.description))
+    tile(tool),
+    h('span', { class: 'tool-text' },
+      h('span', { class: 'tool-name' }, tool.title),
+      h('span', { class: 'tool-desc' }, tool.description)))
 }
 
 function section(name, tools) {
@@ -57,8 +70,10 @@ function renderList() {
     const tool = byId.get(detected)
     set(suggestion,
       h('button', { type: 'button', class: 'suggest', onclick: () => open(detected, search.value.trim()) },
-        h('span', { class: 'suggest-label' }, 'Looks like ', h('strong', {}, tool.title.replace(/ (Decoder|Formatter|Tester)$/, ''))),
-        h('span', { class: 'suggest-action' }, `Open in ${tool.title} ↵`)))
+        tile(tool),
+        h('span', { class: 'tool-text' },
+          h('span', { class: 'suggest-label' }, 'Looks like ', h('strong', {}, LOOKS_LIKE[detected] ?? tool.title)),
+          h('span', { class: 'suggest-action' }, `Open in ${tool.title} ↵`))))
   }
   if (query && !detected) {
     const found = searchTools(query)
@@ -81,6 +96,7 @@ function open(id, value) {
   const { view } = built.get(id)
   for (const [other, entry] of built) entry.node.hidden = other !== id
   if (value !== undefined) view.fill?.(value)
+  set(headerTile, tile(tool, 'large'))
   title.textContent = tool.title
   subtitle.textContent = tool.description
   header.hidden = false

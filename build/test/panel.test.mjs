@@ -15,8 +15,10 @@ test('lists every tool by group in both themes without CSP violations', async ()
     const { page, frame, errors } = await openPanel(browser, { theme })
     const names = await frame.locator('.tool-item .tool-name').allTextContents()
     assert.deepEqual(names.sort(), TOOLS.map((tool) => tool.title).sort())
-    assert.deepEqual(await frame.locator('.group h2').allTextContents(), ['Inspect', 'Encode', 'Generate', 'Text'])
+    assert.deepEqual(await frame.locator('.group h2').allTextContents(), ['Inspect', 'Encode', 'Convert', 'Generate', 'Text'])
     assert.equal(await frame.evaluate(() => document.activeElement.id), 'search')
+    // Every tool shows its own icon tile.
+    assert.equal(await frame.locator('.tool-item .tile svg').count(), TOOLS.length)
     // No horizontal scroll at sidebar width.
     assert.equal(await frame.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true)
     assert.deepEqual(errors, [])
@@ -77,7 +79,15 @@ test('every tool opens and produces output without errors', async () => {
     base64: ['textarea', 'SGVsbG8sIHdvcmxkIQ==', /Hello, world!/],
     url: ['textarea', 'https://example.com/a?x=1&y=two', /two/],
     json: ['textarea', '{"b":1,"a":2}', /"b": 1/],
-    regex: ['textarea', 'ann@a.com bob@b.com', null]
+    regex: ['textarea', 'ann@a.com bob@b.com', null],
+    escape: ['textarea', '<b>&</b>', /&lt;b&gt;&amp;&lt;\/b&gt;/],
+    color: ['input', 'hsl(217 91% 60%)', /#3c83f6/],
+    number: ['input', '0xff', /0b11111111/],
+    chmod: ['input', 'rw-r--r--', /chmod 644 file/],
+    case: ['textarea', 'userProfileId', /user_profile_id/],
+    lines: ['textarea', 'b\na\nb', /b\na3 lines → 2/],
+    stats: ['textarea', 'Hello world', /Words\s*2/],
+    diff: ['textarea', 'one\ntwo', null]
   }
   for (const tool of TOOLS) {
     await frame.locator('#search').fill(tool.title)
@@ -96,6 +106,35 @@ test('every tool opens and produces output without errors', async () => {
     assert.equal(await frame.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, tool.id)
     await frame.locator('.back').click()
   }
+  assert.deepEqual(errors, [])
+  await page.close()
+})
+
+test('new tools: diff marks changed words, chmod grid stays in sync, colours paste', async () => {
+  const { page, frame, errors } = await openPanel(browser)
+  await frame.locator('#search').fill('diff')
+  await frame.locator('#search').press('Enter')
+  const diff = frame.locator('[data-view="diff"]')
+  await diff.locator('textarea').nth(0).fill('const answer = 41;\nkeep')
+  await diff.locator('textarea').nth(1).fill('const answer = 42;\nkeep\nadded')
+  assert.equal(await diff.locator('.block-head').textContent(), '+2 −1Copy')
+  assert.equal(await diff.locator('ins').first().textContent(), '42')
+  assert.equal(await diff.locator('del').first().textContent(), '41')
+  await frame.locator('.back').click()
+
+  await frame.locator('#search').fill('chmod')
+  await frame.locator('#search').press('Enter')
+  const chmod = frame.locator('[data-view="chmod"]')
+  await chmod.getByLabel('Others execute').uncheck()
+  assert.equal(await chmod.locator('input.mono').inputValue(), '754')
+  assert.match(await chmod.locator('.rows').textContent(), /rwxr-xr--/)
+  await frame.locator('.back').click()
+
+  await paste(frame, '#search', '#ff000080')
+  const color = frame.locator('[data-view="color"]')
+  await color.waitFor()
+  assert.match(await color.locator('.rows').first().textContent(), /rgba\(255, 0, 0, 0\.502\)/)
+  assert.equal(await frame.locator('.tool-header .tile svg').count(), 1)
   assert.deepEqual(errors, [])
   await page.close()
 })

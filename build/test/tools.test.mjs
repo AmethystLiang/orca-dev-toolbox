@@ -144,3 +144,117 @@ test('cron descriptions and next runs', () => {
   const leap = nextRuns('0 0 29 2 *', from, 1)[0]
   assert.equal(leap.getFullYear(), 2028)
 })
+
+import { BLACK, contrast, contrastLevel, parseColor, toHex, toHsl, toOklch, toRgb, WHITE } from '../src/tools/color.js'
+import { bitLength, codePointChar, formatInteger, group, parseInteger, twosComplement } from '../src/tools/number.js'
+import { describeMode, parseMode, toOctal, toSymbolic } from '../src/tools/chmod.js'
+import { escapeHtml, escapeJsonString, escapeUnicode, unescapeHtml, unescapeJsonString, unescapeUnicode } from '../src/tools/escape.js'
+import { convertCase, countText, processLines, words } from '../src/tools/text.js'
+import { diffLines, summarize, unifiedDiff } from '../src/tools/diff.js'
+
+test('colours convert between hex, rgb, hsl and oklch', () => {
+  const blue = parseColor('#3b82f6')
+  assert.equal(toRgb(blue), 'rgb(59, 130, 246)')
+  assert.equal(toHsl(blue), 'hsl(217, 91%, 60%)')
+  assert.equal(toOklch(blue), 'oklch(62.3% 0.188 259.8)')
+  assert.equal(toHex(parseColor('rgb(59 130 246)')), '#3b82f6')
+  assert.equal(toHex(parseColor('rgba(59, 130, 246, 0.5)')), '#3b82f680')
+  assert.equal(toHex(parseColor('hsl(217deg 91% 60%)')), '#3c83f6')
+  assert.equal(toHex(parseColor('oklch(62.3% 0.188 259.8)')), '#3b82f6')
+  assert.equal(toHex(parseColor('#fff')), '#ffffff')
+  assert.equal(toHex(parseColor('f00a')), '#ff0000aa')
+  assert.equal(parseColor('oklch(70% 0.4 150)').outOfGamut, true)
+  assert.equal(toOklch(parseColor('#808080')), 'oklch(59.987% 0 0)'.replace('59.987', '60'))
+  assert.equal(Math.round(contrast(WHITE, BLACK)), 21)
+  assert.equal(contrastLevel(contrast(parseColor('#767676'), WHITE)), 'AA')
+  assert.throws(() => parseColor('blue-ish'), /Not a colour/)
+  assert.equal(parseColor('  '), null)
+})
+
+test('integers convert between bases of any size', () => {
+  assert.deepEqual(parseInteger('0xff'), { value: 255n, radix: 16 })
+  assert.deepEqual(parseInteger('ff'), { value: 255n, radix: 16 })
+  assert.deepEqual(parseInteger('0b1010_1010'), { value: 170n, radix: 2 })
+  assert.deepEqual(parseInteger('1,000,000'), { value: 1000000n, radix: 10 })
+  assert.deepEqual(parseInteger('-0o17'), { value: -15n, radix: 8 })
+  assert.deepEqual(parseInteger('777', 8), { value: 511n, radix: 8 })
+  assert.equal(parseInteger('18446744073709551615').value.toString(16), 'ffffffffffffffff')
+  assert.throws(() => parseInteger('102', 2), /binary/)
+  assert.equal(formatInteger(-255n, 16), '-0xff')
+  assert.equal(group('11110000', 4), '1111 0000')
+  assert.equal(group('1000000', 3, ','), '1,000,000')
+  assert.equal(bitLength(255n), 8)
+  assert.deepEqual(twosComplement(-1n), { width: 8, label: 'Unsigned 8-bit', value: 255n })
+  assert.deepEqual(twosComplement(0xffffffffn), { width: 32, label: 'Signed 32-bit', value: -1n })
+  assert.equal(twosComplement(100n), null)
+  assert.equal(codePointChar(0x1f600n), '😀')
+  assert.equal(codePointChar(10n), null)
+})
+
+test('chmod modes read both ways', () => {
+  assert.equal(parseMode('755'), 0o755)
+  assert.equal(parseMode('chmod 0644'), 0o644)
+  assert.equal(parseMode('rwxr-xr-x'), 0o755)
+  assert.equal(parseMode('-rwsr-xr-x'), 0o4755)
+  assert.equal(parseMode('drwxrwxrwt'), 0o1777)
+  assert.equal(toSymbolic(0o4755), 'rwsr-xr-x')
+  assert.equal(toSymbolic(0o1666), 'rw-rw-rwT')
+  assert.equal(toOctal(0o644), '644')
+  assert.equal(toOctal(0o2755), '2755')
+  assert.equal(describeMode(0o644), 'Owner can read and write; group and others can read.')
+  assert.equal(describeMode(0o700), 'Owner can read, write and execute; group and others have no access.')
+  assert.throws(() => parseMode('999'), /Not a mode/)
+})
+
+test('escapes round-trip for HTML, JSON strings and Unicode', () => {
+  assert.equal(escapeHtml('<a href="x">Tom & Jerry\'s</a>'), '&lt;a href=&quot;x&quot;&gt;Tom &amp; Jerry&#39;s&lt;/a&gt;')
+  assert.equal(unescapeHtml('&lt;b&gt; &amp;amp; &#169; &#x1F600; &hellip; &bogus;'), '<b> &amp; © 😀 … &bogus;')
+  assert.equal(escapeJsonString('say "hi"\n\ttab \\'), 'say \\"hi\\"\\n\\ttab \\\\')
+  assert.equal(unescapeJsonString('"say \\"hi\\"\\n\\u00e9"'), 'say "hi"\né')
+  assert.equal(unescapeJsonString('bare "quotes" ok'), 'bare "quotes" ok')
+  assert.throws(() => unescapeJsonString('bad \\q'), /backslash/)
+  assert.equal(escapeUnicode('Xin chào 👋'), 'Xin ch\\u00E0o \\uD83D\\uDC4B')
+  assert.equal(escapeUnicode('👋', { braces: true }), '\\u{1F44B}')
+  assert.equal(unescapeUnicode('Xin ch\\u00e0o \\uD83D\\uDC4B \\u{1F600} \\x41 U+00E9\\n'), 'Xin chào 👋 😀 A é\n')
+})
+
+test('identifier cases, line tools and counts', () => {
+  assert.deepEqual(words('parseHTTPResponse_v2'), ['parse', 'HTTP', 'Response', 'v2'])
+  assert.deepEqual(words('Xin chào thế giới'), ['Xin', 'chào', 'thế', 'giới'])
+  assert.equal(convertCase('user id\nHTTPServer', 'camelCase'), 'userId\nhttpServer')
+  assert.equal(convertCase('user-profile_page', 'PascalCase'), 'UserProfilePage')
+  assert.equal(convertCase('userProfile', 'CONSTANT_CASE'), 'USER_PROFILE')
+  assert.equal(convertCase('User Profile', 'kebab-case'), 'user-profile')
+  assert.equal(convertCase('hello_world', 'Sentence case'), 'Hello world')
+  const lines = processLines(' b\nfile10\n\nfile9\nB\nb ', { trim: true, dropEmpty: true, unique: true, ignoreCase: true, sort: 'asc' })
+  assert.equal(lines.text, 'b\nfile9\nfile10')
+  assert.deepEqual([lines.before, lines.after, lines.duplicates], [6, 3, 2])
+  assert.equal(processLines('a\nb\nc', { sort: 'reverse' }).text, 'c\nb\na')
+  assert.equal(processLines('a\nb\nc', { sort: 'shuffle', random: () => 0 }).text, 'b\nc\na')
+  assert.equal(processLines('').after, 0)
+  const counts = countText('Hi 👋🏽 there.\n\nNew para é')
+  assert.equal(counts.characters, 23)
+  assert.equal(counts.words, 5)
+  assert.equal(counts.lines, 3)
+  assert.equal(counts.paragraphs, 2)
+  assert.equal(counts.bytes, 31)
+  assert.equal(counts.codePoints, 24)
+})
+
+test('line diff finds the shortest edit and writes a unified patch', () => {
+  const before = 'one\ntwo\nthree\nfour\nfive\nsix\nseven\neight\nnine\nten\n'
+  const after = 'one\ntwo\nthree\nfour\nfive\nsix\nseven\neight\nNINE!\nten\neleven\n'
+  const lines = diffLines(before, after)
+  assert.deepEqual(summarize(lines), { added: 2, removed: 1 })
+  assert.equal(unifiedDiff(lines), [
+    '--- a', '+++ b', '@@ -6,5 +6,6 @@', ' six', ' seven', ' eight', '-nine', '+NINE!', ' ten', '+eleven', ''
+  ].join('\n'))
+  const words = diffLines('const answer = 41;', 'const answer = 42;')
+  assert.deepEqual(words[1].parts, [{ text: 'const answer = ', changed: false }, { text: '42', changed: true }, { text: ';', changed: false }])
+  assert.deepEqual(summarize(diffLines('a  b\n', 'a b\n', { ignoreWhitespace: true })), { added: 0, removed: 0 })
+  assert.equal(unifiedDiff(diffLines('same', 'same')), '')
+  // Every line of both sides appears once, in order.
+  const big = diffLines('a\nb\nc\nd\ne\nf', 'x\nb\ny\nd\nz')
+  assert.deepEqual(big.filter((l) => l.type !== 'insert').map((l) => l.text), ['a', 'b', 'c', 'd', 'e', 'f'])
+  assert.deepEqual(big.filter((l) => l.type !== 'delete').map((l) => l.text), ['x', 'b', 'y', 'd', 'z'])
+})

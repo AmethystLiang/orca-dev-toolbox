@@ -11,6 +11,8 @@ export default {
   id: 'cron',
   title: 'Cron',
   group: 'Inspect',
+  icon: 'repeat',
+  color: '#8b5cf6',
   description: 'Explain a cron schedule and list its next runs',
   keywords: ['crontab', 'schedule', 'job', 'github actions', 'every'],
   create() {

@@ -22,6 +22,7 @@ src/
   registry.js    the list of tools and their groups
   detect.js      recognises a pasted value and names the tool for it
   ui.js          small DOM helpers: fields, segmented buttons, output blocks, copy
+  icons.js       the line icons on each tool's tile
   tools/*.js     pure logic, no DOM: tested in Node by test/tools.test.mjs
   views/*.js     one file per tool: its metadata and its UI
 ```
@@ -36,7 +37,9 @@ src/
    export default {
      id: 'color',                       // unique, used in the DOM and saved as the last tool
      title: 'Color',                    // shown in the list and the header
-     group: 'Encode',                   // one of GROUPS in registry.js
+     group: 'Convert',                  // one of GROUPS in registry.js
+     icon: 'droplet',                   // a name from src/icons.js
+     color: '#ec4899',                  // tints the icon tile
      description: 'One line on what it does',
      keywords: ['hex', 'rgb', 'hsl'],   // extra words the search matches
      create() {

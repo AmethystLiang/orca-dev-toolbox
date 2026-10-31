@@ -12,6 +12,8 @@ export default {
   id: 'regex',
   title: 'Regex Tester',
   group: 'Text',
+  icon: 'regex',
+  color: '#d946ef',
   description: 'Test a JavaScript regular expression, see groups and replace',
   keywords: ['regexp', 'pattern', 'match', 'replace', 'groups', 'test'],
   create() {

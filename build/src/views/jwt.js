@@ -6,6 +6,8 @@ export default {
   id: 'jwt',
   title: 'JWT Decoder',
   group: 'Inspect',
+  icon: 'key',
+  color: '#f59e0b',
   description: 'Header, claims and expiry of a JSON Web Token',
   keywords: ['token', 'bearer', 'auth', 'jws', 'claims', 'exp'],
   create() {

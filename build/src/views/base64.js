@@ -5,6 +5,8 @@ export default {
   id: 'base64',
   title: 'Base64',
   group: 'Encode',
+  icon: 'swap',
+  color: '#14b8a6',
   description: 'Encode text to Base64 or decode it back, URL-safe too',
   keywords: ['b64', 'decode', 'encode', 'base64url', 'atob', 'btoa'],
   create() {

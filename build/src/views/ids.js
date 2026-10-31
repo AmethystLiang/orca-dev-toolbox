@@ -6,6 +6,8 @@ export default {
   id: 'ids',
   title: 'UUID & Random',
   group: 'Generate',
+  icon: 'dice',
+  color: '#10b981',
   description: 'UUID v4 and v7, and random strings for secrets and keys',
   keywords: ['guid', 'uuid', 'v4', 'v7', 'random', 'password', 'secret', 'token', 'id'],
   create() {
