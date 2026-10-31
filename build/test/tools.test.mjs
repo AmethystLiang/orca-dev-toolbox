@@ -258,3 +258,102 @@ test('line diff finds the shortest edit and writes a unified patch', () => {
   assert.deepEqual(big.filter((l) => l.type !== 'insert').map((l) => l.text), ['a', 'b', 'c', 'd', 'e', 'f'])
   assert.deepEqual(big.filter((l) => l.type !== 'delete').map((l) => l.text), ['x', 'b', 'y', 'd', 'z'])
 })
+
+import { sha384 } from '../src/tools/hash.js'
+import { signJwt, verifyJwt } from '../src/tools/jwt.js'
+import { ulid, ulidTime } from '../src/tools/ids.js'
+import { zoneString } from '../src/tools/time.js'
+import { jsonToYaml, parseYaml, yamlToJson } from '../src/tools/yaml.js'
+import { jsonToTypes } from '../src/tools/types.js'
+import { csvToJson, jsonToCsv, parseCsv } from '../src/tools/csv.js'
+import { formatIPv6, parseIPv6, subnet } from '../src/tools/cidr.js'
+import { convertCurl, parseCurl, shellWords } from '../src/tools/curl.js'
+import { searchStatus } from '../src/tools/http.js'
+
+test('SHA-384, JWT signing and verification, ULID, time zones', () => {
+  assert.equal(hex(sha384(utf8('abc'))), 'cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7')
+  assert.equal(hex(hmac('SHA-384', new Uint8Array(20).fill(0x0b), utf8('Hi There'))), 'afd03944d84895626b0825f4ab46907f15f9dadbe4101ec682aa034c7cebc59cfaea9ea9076ede7f4af152e8b2fa9cb6')
+  const jwtIo = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+  assert.equal(signJwt({ sub: '1234567890', name: 'John Doe', iat: 1516239022 }, 'your-256-bit-secret'), jwtIo)
+  assert.equal(verifyJwt(jwtIo, 'your-256-bit-secret'), true)
+  assert.equal(verifyJwt(`Bearer ${jwtIo}`, 'wrong'), false)
+  for (const alg of ['HS384', 'HS512']) assert.equal(verifyJwt(signJwt({ a: 1 }, 's', alg), 's'), true)
+  assert.equal(ulid(1469918176385, new Uint8Array(10)), '01ARYZ6S410000000000000000')
+  assert.equal(ulidTime('01ARYZ6S41TSV4RRFFQ69G5FAV').getTime(), 1469918176385)
+  assert.equal(zoneString(new Date('2026-10-31T09:05:09Z'), 'Asia/Kolkata'), '2026-10-31 14:35:09 GMT+05:30')
+  assert.equal(zoneString(new Date('2026-10-31T09:05:09Z'), 'UTC'), '2026-10-31 09:05:09 GMT+00:00')
+})
+
+test('YAML ↔ JSON', () => {
+  assert.equal(yamlToJson('name: app\nports:\n  - 80\n  - 443\nenv: {DEBUG: true}\n'), '{\n  "name": "app",\n  "ports": [\n    80,\n    443\n  ],\n  "env": {\n    "DEBUG": true\n  }\n}')
+  assert.deepEqual(parseYaml('a: 1\n---\nb: 2\n'), { value: [{ a: 1 }, { b: 2 }], documents: 2 })
+  assert.equal(jsonToYaml('{"a":[1,{"b":"x"}],"c":null}'), 'a:\n  - 1\n  - b: x\nc: null\n')
+  assert.throws(() => yamlToJson('a: [1,\nb'), /line 2/)
+  assert.throws(() => jsonToYaml('{bad'), /Not valid JSON/)
+})
+
+test('JSON to types: optional, nullable, nested and named', () => {
+  const sample = '{"id":1,"user_name":"ann","items":[{"sku":"a","qty":1},{"sku":"b","qty":2.5,"note":"x"}],"parent":null,"meta":{"tags":["t"]}}'
+  assert.equal(jsonToTypes(sample, 'typescript'), [
+    'export interface Root {', '  id: number', '  user_name: string', '  items: Item[]', '  parent: null', '  meta: Meta', '}', '',
+    'export interface Item {', '  sku: string', '  qty: number', '  note?: string', '}', '',
+    'export interface Meta {', '  tags: string[]', '}'
+  ].join('\n'))
+  const go = jsonToTypes(sample, 'go')
+  assert.match(go, /ID +int64 +`json:"id"`/)
+  assert.match(go, /Qty +float64/)
+  assert.match(go, /Note +\*string +`json:"note,omitempty"`/)
+  assert.match(jsonToTypes(sample, 'rust'), /#\[serde\(default, skip_serializing_if = "Option::is_none"\)\]\n    pub note: Option<String>,/)
+  assert.match(jsonToTypes(sample, 'python'), /note: str \| None = None/)
+  assert.equal(jsonToTypes('[{"a":1},{"a":null}]'), 'export type Root = RootItem[]\n\nexport interface RootItem {\n  a: number | null\n}')
+  assert.throws(() => jsonToTypes('{'), /Not valid JSON/)
+})
+
+test('CSV ↔ JSON follows RFC 4180', () => {
+  assert.deepEqual(parseCsv('a,"b ""q""",c\n"multi\nline",2,'), [['a', 'b "q"', 'c'], ['multi\nline', '2', '']])
+  assert.deepEqual(csvToJson('name\tage\nAnn\t30\nBob\t').value, [{ name: 'Ann', age: 30 }, { name: 'Bob', age: null }])
+  assert.equal(csvToJson('a;b\n1;2').delimiter, ';')
+  assert.deepEqual(csvToJson('id,zip\n1,007', { types: true }).value, [{ id: 1, zip: '007' }])
+  assert.equal(jsonToCsv('[{"a":1,"b":"x,y"},{"a":2,"c":"say \\"hi\\""}]'), 'a,b,c\n1,"x,y",\n2,,"say ""hi"""')
+  assert.throws(() => parseCsv('"open'), /never closed/)
+})
+
+test('subnets for IPv4 and IPv6', () => {
+  const v4 = subnet('192.168.1.130/26')
+  assert.deepEqual([v4.network, v4.netmask, v4.first, v4.last, v4.broadcast, v4.hosts, v4.kind], ['192.168.1.128/26', '255.255.255.192', '192.168.1.129', '192.168.1.190', '192.168.1.191', 62n, 'Private (RFC 1918)'])
+  assert.equal(subnet('10.1.2.3 255.255.0.0').network, '10.1.0.0/16')
+  assert.equal(subnet('8.8.8.8').kind, 'Public')
+  assert.equal(subnet('10.0.0.0/31').hosts, 2n)
+  assert.equal(subnet('10.0.0.0/8').contains('10.200.0.1'), true)
+  assert.equal(subnet('10.0.0.0/8').contains('11.0.0.1'), false)
+  const v6 = subnet('2001:DB8:0:0:1::1/64')
+  assert.deepEqual([v6.network, v6.first, v6.last, v6.kind], ['2001:db8::/64', '2001:db8::', '2001:db8::ffff:ffff:ffff:ffff', 'Documentation'])
+  assert.equal(formatIPv6(parseIPv6('::ffff:192.0.2.1')), '::ffff:c000:201')
+  assert.equal(formatIPv6(parseIPv6('2001:db8:0:1:0:0:0:1')), '2001:db8:0:1::1')
+  assert.throws(() => subnet('300.1.1.1/8'), /Not an IP/)
+  assert.throws(() => subnet('10.0.0.0 255.0.255.0'), /contiguous/)
+  assert.throws(() => subnet('10.0.0.0/33'), /0 to 32/)
+})
+
+test('curl commands convert to fetch, requests and HTTPie', () => {
+  assert.deepEqual(shellWords(`curl 'a b' "c\\"d" e\\ f $'g\\nh' \\\n -X`), ['curl', 'a b', 'c"d', 'e f', 'g\nh', '-X'])
+  const request = parseCurl(`curl https://api.x.dev/items -H 'Accept: application/json' --json '{"n":1}' -u ann:pw -sSL`)
+  assert.equal(request.method, 'POST')
+  assert.equal(request.followRedirects, true)
+  assert.deepEqual(request.headers.map(([n]) => n), ['Accept', 'Content-Type', 'Authorization'])
+  assert.equal(request.headers[2][1], 'Basic YW5uOnB3')
+  const fetchCode = convertCurl(`curl -X PUT https://x.dev/a -H "Content-Type: application/json" -d '{"ok":true}'`, 'fetch').code
+  assert.match(fetchCode, /method: "PUT"/)
+  assert.match(fetchCode, /body: JSON\.stringify\(\{\n {4}"ok": true\n {2}\}\)/)
+  assert.match(convertCurl(`curl https://x.dev -d 'a=1'`, 'python').code, /requests\.post\('https:\/\/x\.dev', headers=headers, data=data\)/)
+  assert.equal(convertCurl(`curl -G https://x.dev/s -d q=1`, 'httpie').code, "http GET 'https://x.dev/s?q=1'")
+  assert.equal(convertCurl(`curl -k -X DELETE https://x.dev/a/1`, 'httpie').code, 'http --verify=no DELETE https://x.dev/a/1')
+  assert.throws(() => parseCurl('wget x'), /starts with curl/)
+})
+
+test('HTTP status search', () => {
+  assert.deepEqual(searchStatus('404').map(([c]) => c), [404])
+  assert.deepEqual(searchStatus('30x').map(([c]) => c), [300, 301, 302, 303, 304, 307, 308])
+  assert.ok(searchStatus('rate').some(([c]) => c === 429))
+  assert.equal(searchStatus('teapot')[0][0], 418)
+})

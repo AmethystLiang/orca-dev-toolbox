@@ -6,27 +6,34 @@ import base64 from './views/base64.js'
 import changeCase from './views/case.js'
 import chmod from './views/chmod.js'
 import color from './views/color.js'
+import cidr from './views/cidr.js'
 import cron from './views/cron.js'
+import csv from './views/csv.js'
+import curl from './views/curl.js'
 import diff from './views/diff.js'
 import escape from './views/escape.js'
 import hash from './views/hash.js'
+import http from './views/http.js'
 import ids from './views/ids.js'
 import json from './views/json.js'
 import jwt from './views/jwt.js'
 import lines from './views/lines.js'
 import number from './views/number.js'
+import qr from './views/qr.js'
 import regex from './views/regex.js'
 import stats from './views/stats.js'
 import time from './views/time.js'
+import types from './views/types.js'
 import url from './views/url.js'
+import yaml from './views/yaml.js'
 
 export const GROUPS = ['Inspect', 'Encode', 'Convert', 'Generate', 'Text']
 
 export const TOOLS = [
-  jwt, time, cron,
+  jwt, time, cron, http, cidr,
   base64, url, escape,
-  color, number, chmod,
-  ids, hash,
+  yaml, csv, types, curl, color, number, chmod,
+  ids, hash, qr,
   json, regex, diff, changeCase, lines, stats
 ]
 

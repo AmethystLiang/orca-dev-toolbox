@@ -58,3 +58,25 @@ export function timeRows(date, now = Date.now()) {
     ['Unix milliseconds', String(ms)]
   ]
 }
+
+/** The wall time in an IANA time zone, e.g. 2026-10-31 05:05:09 GMT-04:00. */
+export function zoneString(date, timeZone) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+    timeZone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'longOffset'
+  }).formatToParts(date).map((part) => [part.type, part.value]))
+  const offset = parts.timeZoneName === 'GMT' ? 'GMT+00:00' : parts.timeZoneName
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second} ${offset}`
+}
+
+export const COMMON_ZONES = [
+  'America/Los_Angeles', 'America/Denver', 'America/Chicago', 'America/New_York', 'America/Sao_Paulo',
+  'Europe/London', 'Europe/Berlin', 'Europe/Moscow', 'Asia/Dubai', 'Asia/Kolkata', 'Asia/Ho_Chi_Minh',
+  'Asia/Singapore', 'Asia/Shanghai', 'Asia/Tokyo', 'Australia/Sydney', 'Pacific/Auckland'
+]
+
+/** Every zone the runtime knows, common ones first. */
+export function timeZones() {
+  const all = typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : []
+  return [...COMMON_ZONES, ...all.filter((zone) => !COMMON_ZONES.includes(zone))]
+}

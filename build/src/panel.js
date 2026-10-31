@@ -7,7 +7,7 @@ import { h, set } from './ui.js'
 
 const RECENT_LIMIT = 3
 // What a pasted value is, where the tool's title does not say it.
-const LOOKS_LIKE = { jwt: 'a JWT', time: 'a timestamp', ids: 'a UUID', json: 'JSON', url: 'a URL', cron: 'a cron schedule', base64: 'Base64', color: 'a colour', number: 'a number', chmod: 'a file mode', escape: 'escaped text' }
+const LOOKS_LIKE = { jwt: 'a JWT', time: 'a timestamp', ids: 'a UUID', json: 'JSON', url: 'a URL', cron: 'a cron schedule', base64: 'Base64', color: 'a colour', number: 'a number', chmod: 'a file mode', escape: 'escaped text', curl: 'a curl command', cidr: 'an IP address', yaml: 'YAML', csv: 'CSV' }
 const byId = new Map(TOOLS.map((tool) => [tool.id, tool]))
 const built = new Map()
 
@@ -128,6 +128,8 @@ search.addEventListener('paste', (event) => {
 })
 search.addEventListener('keydown', (event) => {
   if (event.key === 'Enter') {
+    // The tool takes focus during this keydown; without this, the Enter lands in its input.
+    event.preventDefault()
     const detected = detect(search.value)
     if (detected) return open(detected, search.value.trim())
     const first = list.querySelector('.tool-item')

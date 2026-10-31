@@ -55,3 +55,35 @@ export function randomString(length, alphabet = 'alphanumeric') {
 }
 
 export const STRING_ALPHABETS = Object.keys(ALPHABETS)
+
+const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
+
+/** ULID: 48-bit millisecond time and 80 random bits in Crockford Base32, 26 characters. */
+export function ulid(now = Date.now(), bytes = random(10)) {
+  let time = ''
+  let t = now
+  for (let i = 0; i < 10; i++) {
+    time = CROCKFORD[t % 32] + time
+    t = Math.floor(t / 32)
+  }
+  let bits = 0n
+  for (const byte of bytes) bits = (bits << 8n) | BigInt(byte)
+  let rest = ''
+  for (let i = 0; i < 16; i++) {
+    rest = CROCKFORD[Number(bits & 31n)] + rest
+    bits >>= 5n
+  }
+  return time + rest
+}
+
+/** The creation time inside a ULID, or null when it is not one. */
+export function ulidTime(text) {
+  const id = text.trim().toUpperCase()
+  if (!/^[0-7][0-9A-HJKMNP-TV-Z]{25}$/.test(id)) return null
+  let time = 0
+  for (const c of id.slice(0, 10)) time = time * 32 + CROCKFORD.indexOf(c)
+  return new Date(time)
+}
+
+/** Nano ID: 21 URL-safe characters, as the nanoid package makes them. */
+export const nanoid = (size = 21) => randomString(size, 'url-safe')

@@ -32,13 +32,22 @@ test('recognises each kind of pasted value', () => {
     ['-rwxr-xr-x', 'chmod'],
     ['rw-r--r--', 'chmod'],
     ['&lt;div class=&quot;x&quot;&gt;', 'escape'],
-    ['Xin ch\\u00e0o', 'escape']
+    ['Xin ch\\u00e0o', 'escape'],
+    ["curl -X POST https://x.dev -d 'a=1'", 'curl'],
+    ['01ARYZ6S41TSV4RRFFQ69G5FAV', 'ids'],
+    ['10.0.0.0/8', 'cidr'],
+    ['192.168.1.10', 'cidr'],
+    ['192.168.1.10 255.255.255.0', 'cidr'],
+    ['2001:db8::/32', 'cidr'],
+    ['name: app\nreplicas: 2\nports:\n  - 80', 'yaml'],
+    ['name,email\nAda,ada@x.dev\nBob,bob@x.dev', 'csv'],
+    ['a\tb\n1\t2', 'csv']
   ]
   for (const [value, tool] of cases) assert.equal(detect(value), tool, value)
 })
 
 test('leaves ordinary words and broken values to the search', () => {
-  for (const value of ['', '   ', 'json', 'password', 'base64 encode', '{not json', 'hash', '12345', 'eyJhbGciOi', '#hashtag', 'rgb', 'Tom & Jerry']) {
+  for (const value of ['', '   ', 'json', 'password', 'base64 encode', '{not json', 'hash', '12345', 'eyJhbGciOi', '#hashtag', 'rgb', 'Tom & Jerry', 'Hello, world.\nHow are you?', 'note: remember this', '1.2.3']) {
     assert.equal(detect(value), null, value)
   }
 })

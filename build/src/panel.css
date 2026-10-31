@@ -132,6 +132,7 @@ button.small { padding: 1px 8px; font-size: 12px; margin-left: auto; }
 }
 .block-head > span:first-child { margin-right: auto; }
 .out {
+  tab-size: 4;
   margin: 0; padding: 8px 10px; font: 12px/1.5 var(--mono); white-space: pre-wrap; word-break: break-all;
   max-height: 360px; overflow: auto;
 }
@@ -173,6 +174,20 @@ button.copy.done { color: var(--fg); border-color: var(--ring); }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .chip { border-color: var(--border); font-size: 12px; }
 .offscreen { position: fixed; left: -9999px; top: 0; opacity: 0; }
+
+.stack > * + * { margin-top: 10px; }
+
+/* HTTP status */
+.status { display: flex; gap: 10px; align-items: baseline; padding: 5px 8px; border-radius: calc(var(--radius) - 2px); }
+.status-code { flex: none; font: 600 12px/20px var(--mono); padding: 0 6px; border-radius: 4px; background: color-mix(in srgb, var(--tone) 16%, var(--bg)); color: color-mix(in srgb, var(--tone) 80%, var(--fg)); }
+.status.c1 { --tone: #64748b; } .status.c2 { --tone: #16a34a; } .status.c3 { --tone: #0ea5e9; } .status.c4 { --tone: #f59e0b; } .status.c5 { --tone: #ef4444; }
+.status-name { font-weight: 600; }
+.tool-desc.wrap { white-space: normal; }
+.status-list .group h2 { padding: 0 8px; }
+
+/* QR */
+.qr-frame { display: grid; place-items: center; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; }
+img.qr { width: min(100%, 240px); height: auto; image-rendering: pixelated; display: block; }
 
 /* Color */
 .color-input { flex-wrap: nowrap; }

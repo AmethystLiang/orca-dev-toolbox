@@ -1,4 +1,5 @@
-import { base64ToBytes, bytesToText } from './codec.js'
+import { base64ToBytes, bytesToBase64, bytesToText, utf8 } from './codec.js'
+import { hmac } from './hash.js'
 
 const TIME_CLAIMS = { exp: 'Expires', iat: 'Issued at', nbf: 'Not before', auth_time: 'Authenticated at' }
 
@@ -41,4 +42,32 @@ export function decodeJwt(input, now = Date.now()) {
     }
   }
   return { header, payload, signature: segments[2], times, unsigned: header?.alg === 'none' || segments[2] === '' }
+}
+
+const HMAC_ALGS = { HS256: 'SHA-256', HS384: 'SHA-384', HS512: 'SHA-512' }
+export const SIGNING_ALGS = Object.keys(HMAC_ALGS)
+
+function signature(alg, secret, signingInput) {
+  return bytesToBase64(hmac(HMAC_ALGS[alg], utf8(secret), utf8(signingInput)), true)
+}
+
+/**
+ * Checks an HS256/384/512 signature with the shared secret: true, false, or null when the token
+ * uses another algorithm (RS, ES and PS need a public key).
+ */
+export function verifyJwt(input, secret) {
+  const token = input.trim().replace(/^Bearer\s+/i, '')
+  const [head, body, sig] = token.split('.')
+  const { header } = decodeJwt(token)
+  if (!HMAC_ALGS[header?.alg]) return null
+  return signature(header.alg, secret, `${head}.${body}`) === sig
+}
+
+/** Signs a payload object with an HMAC algorithm and returns the compact token. */
+export function signJwt(payload, secret, alg = 'HS256', extraHeader = {}) {
+  if (!HMAC_ALGS[alg]) throw new Error(`Signing supports ${SIGNING_ALGS.join(', ')}.`)
+  const header = { alg, typ: 'JWT', ...extraHeader }
+  const encode = (value) => bytesToBase64(utf8(JSON.stringify(value)), true)
+  const signingInput = `${encode(header)}.${encode(payload)}`
+  return `${signingInput}.${signature(alg, secret, signingInput)}`
 }

@@ -149,10 +149,19 @@ const SHA512_H = [
   '510e527fade682d1', '9b05688c2b3e6c1f', '1f83d9abfb41bd6b', '5be0cd19137e2179'
 ].map((hex) => BigInt(`0x${hex}`))
 
-export function sha512(bytes) {
+const SHA384_H = [
+  'cbbb9d5dc1059ed8', '629a292a367cd507', '9159015a3070dd17', '152fecd8f70e5939',
+  '67332667ffc00b31', '8eb44a8768581511', 'db0c2e0d64f98fa7', '47b5481dbefa4fa4'
+].map((hex) => BigInt(`0x${hex}`))
+
+export const sha512 = (bytes) => sha512Family(bytes, SHA512_H, 64)
+/** SHA-384 is SHA-512 with other initial values, cut to 48 bytes. */
+export const sha384 = (bytes) => sha512Family(bytes, SHA384_H, 48)
+
+function sha512Family(bytes, initial, size) {
   const data = pad(bytes, false, 16)
   const view = new DataView(data.buffer)
-  const h = [...SHA512_H]
+  const h = [...initial]
   const w = new Array(80)
   for (let block = 0; block < data.length; block += 128) {
     for (let i = 0; i < 16; i++) w[i] = view.getBigUint64(block + i * 8)
@@ -178,13 +187,14 @@ export function sha512(bytes) {
   }
   const out = new DataView(new ArrayBuffer(64))
   h.forEach((word, i) => out.setBigUint64(i * 8, word))
-  return new Uint8Array(out.buffer)
+  return new Uint8Array(out.buffer, 0, size).slice()
 }
 
 export const DIGESTS = {
   MD5: { digest: md5, block: 64 },
   'SHA-1': { digest: sha1, block: 64 },
   'SHA-256': { digest: sha256, block: 64 },
+  'SHA-384': { digest: sha384, block: 128 },
   'SHA-512': { digest: sha512, block: 128 }
 }
 

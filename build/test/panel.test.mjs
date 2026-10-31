@@ -35,7 +35,7 @@ test('pasting a JWT opens the decoder with its claims', async () => {
   assert.match(await view.locator('.out').nth(1).textContent(), /"name": "John Doe"/)
   assert.match(await view.locator('.rows').textContent(), /Expires.*expired/s)
   // Esc returns to the list with an empty search.
-  await frame.locator('[data-view="jwt"] textarea').press('Escape')
+  await frame.locator('[data-view="jwt"] textarea').first().press('Escape')
   assert.equal(await frame.locator('.home').isVisible(), true)
   assert.equal(await frame.locator('#search').inputValue(), '')
   assert.deepEqual(await frame.locator('.group').first().locator('h2').textContent(), 'Recent')
@@ -49,6 +49,8 @@ test('typing searches tools by keyword and Enter opens the first match', async (
   assert.deepEqual(await frame.locator('.tool-item .tool-name').allTextContents(), ['Hash & HMAC'])
   await frame.locator('#search').press('Enter')
   const view = frame.locator('[data-view="hash"]')
+  // Enter opens the tool without typing a line break into it.
+  assert.equal(await view.locator('textarea').inputValue(), '')
   await view.locator('textarea').fill('abc')
   assert.match(await view.locator('.rows').textContent(), /ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad/)
   await view.locator('input[type="text"]').fill('key')
@@ -87,7 +89,14 @@ test('every tool opens and produces output without errors', async () => {
     case: ['textarea', 'userProfileId', /user_profile_id/],
     lines: ['textarea', 'b\na\nb', /b\na3 lines → 2/],
     stats: ['textarea', 'Hello world', /Words\s*2/],
-    diff: ['textarea', 'one\ntwo', null]
+    diff: ['textarea', 'one\ntwo', null],
+    yaml: ['textarea', 'a: 1\nb: [x]', /"b": \[\n\s+"x"/],
+    csv: ['textarea', 'n,v\nx,1', /"v": 1/],
+    types: ['textarea', '{"id": 1, "tags": ["a"]}', /tags: string\[\]/],
+    curl: ['textarea', "curl https://x.dev -H 'A: b'", /fetch\("https:\/\/x\.dev"/],
+    cidr: ['input', '10.0.0.0/30', /10\.0\.0\.2/],
+    http: ['input', '429', /Too Many Requests/],
+    qr: ['textarea', 'https://onorca.dev', /modules/]
   }
   for (const tool of TOOLS) {
     await frame.locator('#search').fill(tool.title)
@@ -135,6 +144,26 @@ test('new tools: diff marks changed words, chmod grid stays in sync, colours pas
   await color.waitFor()
   assert.match(await color.locator('.rows').first().textContent(), /rgba\(255, 0, 0, 0\.502\)/)
   assert.equal(await frame.locator('.tool-header .tile svg').count(), 1)
+  assert.deepEqual(errors, [])
+  await page.close()
+})
+
+test('JWT verifies and signs; QR renders an image', async () => {
+  const { page, frame, errors } = await openPanel(browser)
+  await paste(frame, '#search', JWT)
+  const jwt = frame.locator('[data-view="jwt"]')
+  await jwt.waitFor()
+  await jwt.locator('input').first().fill('your-256-bit-secret')
+  assert.match(await jwt.locator('.rows').nth(1).textContent(), /invalid/)
+  await jwt.getByRole('button', { name: 'Sign', exact: true }).click()
+  await jwt.locator('input').nth(1).fill('s3cret')
+  assert.match(await jwt.locator('.out').last().textContent(), /^eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJ/)
+  await frame.locator('.back').click()
+  await frame.locator('#search').fill('qr')
+  await frame.locator('#search').press('Enter')
+  const qr = frame.locator('[data-view="qr"]')
+  await qr.locator('textarea').fill('Xin chào 👋')
+  assert.equal(await qr.locator('img.qr').evaluate((img) => img.complete && img.naturalWidth > 0), true)
   assert.deepEqual(errors, [])
   await page.close()
 })
