@@ -3,23 +3,29 @@
 // keywords, create() } (see views/jwt.js), import it here, and, if pasted values can be recognised, teach
 // detect.js its shape.
 import base64 from './views/base64.js'
+import bcrypt from './views/bcrypt.js'
 import changeCase from './views/case.js'
+import cert from './views/cert.js'
 import chars from './views/chars.js'
 import chmod from './views/chmod.js'
 import color from './views/color.js'
 import cidr from './views/cidr.js'
 import cron from './views/cron.js'
+import cssunits from './views/cssunits.js'
 import csv from './views/csv.js'
 import curl from './views/curl.js'
 import diff from './views/diff.js'
 import escape from './views/escape.js'
 import hash from './views/hash.js'
 import http from './views/http.js'
+import image from './views/image.js'
 import ids from './views/ids.js'
 import json from './views/json.js'
+import jsx from './views/jsx.js'
 import jwt from './views/jwt.js'
 import lines from './views/lines.js'
 import number from './views/number.js'
+import password from './views/password.js'
 import qr from './views/qr.js'
 import regex from './views/regex.js'
 import sql from './views/sql.js'
@@ -35,11 +41,11 @@ import yaml from './views/yaml.js'
 export const GROUPS = ['Inspect', 'Encode', 'Convert', 'Format', 'Generate', 'Text']
 
 export const TOOLS = [
-  jwt, time, cron, http, cidr, chars,
-  base64, url, escape,
-  yaml, csv, types, curl, units, color, number, chmod,
+  jwt, cert, time, cron, http, cidr, chars,
+  base64, image, url, escape,
+  yaml, csv, types, curl, jsx, cssunits, units, color, number, chmod,
   json, sql, xml,
-  ids, hash, qr,
+  password, ids, hash, bcrypt, qr,
   transform, changeCase, regex, diff, lines, stats
 ]
 

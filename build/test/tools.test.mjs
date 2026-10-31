@@ -433,3 +433,92 @@ test('SQL formats clauses, conditions and subqueries', () => {
   assert.equal(formatSql('select t.order, x::text from "Order" t'), 'SELECT\n  t.order,\n  x::text\nFROM "Order" t\n')
   assert.equal(minifySql('select a ,\n b -- c\n from t'), 'select a, b from t')
 })
+
+import { readFileSync } from 'node:fs'
+import { decodePem } from '../src/tools/cert.js'
+import { htmlToJsx, styleObject } from '../src/tools/jsx.js'
+import { lengthRows, parseLength, pxToRemInCss, toPx } from '../src/tools/cssunits.js'
+import { generatePassword, strength } from '../src/tools/ids.js'
+import { basicAuth, describeHash, hashPassword, htpasswdLine, verifyPassword } from '../src/tools/bcrypt.js'
+import { parseDataUri, snippets } from '../src/tools/image.js'
+
+const fixture = (name) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8')
+
+test('certificates and CSRs decode as openssl reads them', () => {
+  // Fields checked against: openssl x509 -in test/fixtures/server.pem -noout -text -fingerprint -sha256
+  const [cert] = decodePem(fixture('server.pem'), Date.UTC(2026, 11, 1))
+  assert.equal(cert.subject.text, 'C=VN, O=Orca Test, CN=api.example.com')
+  assert.deepEqual(cert.san, ['DNS:api.example.com', 'DNS:*.example.com', 'IP:10.0.0.1', 'IP:2001:db8::1'])
+  assert.equal(cert.serial, '4B:9F:36:20:3C:6D:BE:D1:D4:74:12:89:88:8A:7E:20:8A:68:4B:BE')
+  assert.equal(cert.sha256, '1F:5E:9B:63:0A:32:89:C1:4F:B7:50:1E:FB:FC:26:45:EC:ED:ED:D9:25:05:F4:9B:C7:4E:83:13:B7:53:2B:A7')
+  assert.equal(cert.notAfter.toISOString(), '2027-01-29T12:46:36.000Z')
+  assert.equal(cert.key.label, 'RSA 2048-bit')
+  assert.equal(cert.signature, 'SHA-256 with RSA')
+  assert.deepEqual(cert.keyUsage, ['Digital signature', 'Key encipherment'])
+  assert.deepEqual(cert.extKeyUsage, ['TLS server', 'TLS client'])
+  assert.equal(cert.selfSigned, true)
+  assert.equal(cert.status, 'valid')
+  assert.equal(decodePem(fixture('server.pem'), Date.UTC(2027, 0, 20))[0].status, 'expires soon')
+  assert.equal(decodePem(fixture('server.pem'), Date.UTC(2027, 5, 1))[0].status, 'expired')
+  const [csr] = decodePem(fixture('request.csr'))
+  assert.deepEqual([csr.type, csr.subject.text, csr.key.label, csr.san], ['request', 'CN=shop.example.vn, O=Shop', 'EC P-256', ['DNS:shop.example.vn']])
+  assert.equal(decodePem(fixture('server.pem') + '\n' + fixture('server.pem')).length, 2)
+  assert.throws(() => decodePem('-----BEGIN PRIVATE KEY-----\nAAAA\n-----END PRIVATE KEY-----'), /private key/)
+  assert.throws(() => decodePem('hello'), /PEM block/)
+  const bare = fixture('server.pem').replace(/-----[A-Z ]+-----/g, '')
+  assert.equal(decodePem(bare)[0].subject.cn, 'api.example.com')
+})
+
+test('HTML and SVG become JSX', () => {
+  assert.equal(htmlToJsx('<label class="a" for="x" tabindex="1">Hi {name}</label>'), '<label className="a" htmlFor="x" tabIndex="1">Hi {\'{\'}name{\'}\'}</label>')
+  assert.equal(htmlToJsx('<input value="v" checked disabled><br>'), '<>\n  <input defaultValue="v" defaultChecked disabled /><br />\n</>')
+  assert.equal(htmlToJsx('<svg viewBox="0 0 1 1" stroke-width="2"><path fill-rule="evenodd" xlink:href="#a"/></svg>'), '<svg viewBox="0 0 1 1" strokeWidth="2"><path fillRule="evenodd" xlinkHref="#a" /></svg>')
+  assert.equal(htmlToJsx('<button onclick="go()" ondblclick="x()" onmouseover="y()">a</button>'), '<button onClick={() => { go() }} onDoubleClick={() => { x() }} onMouseOver={() => { y() }}>a</button>')
+  assert.equal(htmlToJsx('<!-- c --><p data-id="1" aria-label="x">t</p>'), '{/* c */}<p data-id="1" aria-label="x">t</p>')
+  assert.equal(htmlToJsx('<p>a</p><p>b</p>'), '<>\n  <p>a</p><p>b</p>\n</>')
+  assert.equal(htmlToJsx('<i></i>', { component: 'Icon' }), 'export default function Icon() {\n  return (\n    <i></i>\n  )\n}')
+  assert.equal(styleObject('color: red; -webkit-transition: all 1s; -ms-flex: 1; z-index: 2; --gap: 4px; background: url(a;b)'), "{{ color: 'red', WebkitTransition: 'all 1s', msFlex: '1', zIndex: 2, '--gap': '4px', background: 'url(a;b)' }}")
+})
+
+test('CSS lengths and px → rem', () => {
+  assert.deepEqual(parseLength('1.5rem'), { value: 1.5, unit: 'rem' })
+  assert.equal(toPx(parseLength('1.5rem')), 24)
+  assert.equal(toPx(parseLength('12pt')), 16)
+  assert.equal(toPx(parseLength('50vw'), { width: 1200 }), 600)
+  assert.deepEqual(lengthRows(24).find(([k]) => k === 'Tailwind'), ['Tailwind', '6 (p-6, gap-6…)'])
+  assert.equal(lengthRows(24, { root: 10 }).find(([k]) => k === 'rem')[1], '2.4rem')
+  assert.deepEqual(pxToRemInCss('a{margin:-8px 0px;border:1px solid;padding:12px}'), { css: 'a{margin:-0.5rem 0px;border:1px solid;padding:0.75rem}', count: 2 })
+  assert.throws(() => parseLength('wide'), /Not a CSS length/)
+})
+
+test('passwords include every chosen set; bcrypt matches known hashes', async () => {
+  for (let i = 0; i < 50; i++) {
+    const { password } = generatePassword({ length: 8, avoidAmbiguous: true })
+    assert.equal(password.length, 8)
+    assert.match(password, /[a-z]/)
+    assert.match(password, /[A-Z]/)
+    assert.match(password, /\d/)
+    assert.match(password, /[^A-Za-z0-9]/)
+    assert.doesNotMatch(password, /[Il1O0o]/)
+  }
+  assert.match(generatePassword({ length: 12, upper: false, symbols: false }).password, /^[a-z0-9]{12}$/)
+  assert.equal(generatePassword({ length: 16, symbols: false }).entropy, 95)
+  assert.equal(strength(95).label, 'strong')
+  // OpenBSD test vector, and a hash written by Apache's htpasswd -nbB.
+  assert.equal(await verifyPassword('U*U', '$2a$05$CCCCCCCCCCCCCCCCCCCCC.E5YPO9kmyuRGyh0XouQYb4YMJKvyOeW'), true)
+  assert.equal(await verifyPassword('hunter2', '$2y$05$HVeMaN2aHCobAD5OD4jw7ujuWVcWHhPoPOJ0pL16mIzXnci.xBBJW'), true)
+  assert.equal(await verifyPassword('hunter3', '$2y$05$HVeMaN2aHCobAD5OD4jw7ujuWVcWHhPoPOJ0pL16mIzXnci.xBBJW'), false)
+  const hash = await hashPassword('s3cret', 4)
+  assert.equal(await verifyPassword('s3cret', hash), true)
+  assert.deepEqual(describeHash(hash).cost, 4)
+  assert.match(htpasswdLine('admin', hash), /^admin:\$2y\$04\$/)
+  assert.equal(basicAuth('Aladdin', 'open sesame'), 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==')
+  await assert.rejects(verifyPassword('x', 'not-a-hash'), /Not a bcrypt hash/)
+})
+
+test('data URIs', () => {
+  assert.deepEqual(parseDataUri('data:image/png;base64,iVBORw0KGgo='), { mime: 'image/png', isBase64: true, payload: 'iVBORw0KGgo=', bytes: 8 })
+  assert.equal(parseDataUri('data:image/svg+xml;charset=utf-8,%3Csvg%3E').mime, 'image/svg+xml')
+  assert.equal(parseDataUri('hello'), null)
+  assert.equal(snippets('data:image/png;base64,AAAA', { name: 'logo', width: 16, height: 16 })[2][1], '<img src="data:image/png;base64,AAAA" alt="logo" width="16" height="16" />')
+})

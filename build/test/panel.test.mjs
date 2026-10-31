@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { after, before, test } from 'node:test'
 import { TOOLS } from '../src/registry.js'
 import { launch, openPanel, paste } from './harness.mjs'
 
 const JWT =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyNDI2MjJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+
+const CERT = readFileSync(new URL('./fixtures/server.pem', import.meta.url), 'utf8')
 
 let browser
 before(async () => (browser = await launch()))
@@ -101,7 +104,10 @@ test('every tool opens and produces output without errors', async () => {
     chars: ['textarea', 'a\u200bb', /ZERO WIDTH SPACE/],
     units: ['input', '1.5 GB', /1,500,000,000/],
     xml: ['textarea', '<a><b>1</b></a>', /<a>\n  <b>1<\/b>\n<\/a>/],
-    sql: ['textarea', 'select a from t where x = 1 and y = 2', /WHERE x = 1\n  AND y = 2/]
+    sql: ['textarea', 'select a from t where x = 1 and y = 2', /WHERE x = 1\n  AND y = 2/],
+    cert: ['textarea', CERT, /api\.example\.com/],
+    jsx: ['textarea', '<div class="a"><br></div>', /<div className="a"><br \/><\/div>/],
+    cssunits: ['input', '32px', /2rem/]
   }
   for (const tool of TOOLS) {
     await frame.locator('#search').fill(tool.title)
@@ -169,6 +175,36 @@ test('JWT verifies and signs; QR renders an image', async () => {
   const qr = frame.locator('[data-view="qr"]')
   await qr.locator('textarea').fill('Xin chào 👋')
   assert.equal(await qr.locator('img.qr').evaluate((img) => img.complete && img.naturalWidth > 0), true)
+  assert.deepEqual(errors, [])
+  await page.close()
+})
+
+test('bcrypt hashes and verifies; a pasted data URI previews; passwords generate', async () => {
+  const { page, frame, errors } = await openPanel(browser)
+  await frame.locator('#search').fill('bcrypt')
+  await frame.locator('#search').press('Enter')
+  const bcrypt = frame.locator('[data-view="bcrypt"]')
+  await bcrypt.locator('input[type="number"]').fill('4')
+  await bcrypt.getByPlaceholder('Password').fill('hunter2')
+  await frame.waitForFunction(() => /\$2b\$04\$/.test(document.querySelector('[data-view="bcrypt"] .rows')?.textContent ?? ''))
+  const hash = (await bcrypt.locator('.row-value').first().textContent()).trim()
+  await bcrypt.getByRole('button', { name: 'Verify', exact: true }).click()
+  await bcrypt.getByPlaceholder('$2b$10$…').fill(hash)
+  await frame.waitForFunction(() => /matches/.test(document.querySelector('[data-view="bcrypt"] .rows')?.textContent ?? ''))
+  await frame.locator('.back').click()
+
+  const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+  await paste(frame, '#search', png)
+  const image = frame.locator('[data-view="image"]')
+  await image.locator('img.preview').waitFor()
+  assert.match(await image.locator('.hint').first().textContent(), /1×1/)
+  await frame.locator('.back').click()
+
+  await frame.locator('#search').fill('password')
+  await frame.locator('#search').press('Enter')
+  const lines = (await frame.locator('[data-view="password"] .out').textContent()).split('\n')
+  assert.equal(lines.length, 5)
+  assert.equal(lines[0].length, 20)
   assert.deepEqual(errors, [])
   await page.close()
 })

@@ -22,6 +22,10 @@ const XML = /^<(\?xml|[A-Za-z_][\w:.-]*)[\s\S]*>$/
 const SIZE = /^\d+(\.\d+)?\s*([kmgtp]i?b|bytes?)$/i
 const DURATION = /^(\d+(\.\d+)?(ms|s|m|h|d))+$|^p(\d+[wd])*(t(\d+(\.\d+)?[hms])+)?$/i
 const HIDDEN = /[\u200b-\u200f\u2060-\u2064\ufeff\u00ad\u202a-\u202e\u2066-\u2069]/
+const PEM = /^-----BEGIN [A-Z0-9 ]+-----/
+const BCRYPT = /^\$2[abxy]\$\d{2}\$[./A-Za-z0-9]{53}$/
+const DATA_URI = /^data:[\w.+-]+\/[\w.+-]+[;,]/i
+const CSS_LENGTH = /^-?\d*\.?\d+(px|rem|em|pt|vw|vh)$/i
 const YAML_KEY = /^(---\s*\n)?[\w.-]+:(\s|$)/
 const HEX_COLOR = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i
 const COLOR_FN = /^(rgba?|hsla?|oklch)\([^()]*\)$/i
@@ -96,6 +100,10 @@ export function detect(value) {
   if (!text) return null
   if (HIDDEN.test(value)) return 'chars'
   if (CURL.test(text)) return 'curl'
+  if (PEM.test(text) && !/PRIVATE KEY/.test(text)) return 'cert'
+  if (BCRYPT.test(text)) return 'bcrypt'
+  if (DATA_URI.test(text)) return 'image'
+  if (CSS_LENGTH.test(text)) return 'cssunits'
   if (SQL.test(text)) return 'sql'
   if (JWT.test(text)) return 'jwt'
   if (UUID.test(text) || ULID.test(text)) return 'ids'

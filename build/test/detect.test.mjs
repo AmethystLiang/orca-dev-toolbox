@@ -51,13 +51,18 @@ test('recognises each kind of pasted value', () => {
     ['1h30m', 'units'],
     ['250ms', 'units'],
     ['PT1H30M', 'units'],
-    ['hello\u200bworld', 'chars']
+    ['hello\u200bworld', 'chars'],
+    ['-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----', 'cert'],
+    ['$2b$10$K7zV3In2v6WuKbmmcgBPqeungTaj.dIr.90Ahw8QD0hRs8yKtDnlK', 'bcrypt'],
+    ['data:image/png;base64,iVBORw0KGgo=', 'image'],
+    ['24px', 'cssunits'],
+    ['1.5rem', 'cssunits']
   ]
   for (const [value, tool] of cases) assert.equal(detect(value), tool, value)
 })
 
 test('leaves ordinary words and broken values to the search', () => {
-  for (const value of ['', '   ', 'json', 'password', 'base64 encode', '{not json', 'hash', '12345', 'eyJhbGciOi', '#hashtag', 'rgb', 'Tom & Jerry', 'Hello, world.\nHow are you?', 'note: remember this', '1.2.3', 'select', 'Selected items', '<b>not closed', 'pm', 'P']) {
+  for (const value of ['', '   ', 'json', 'password', 'base64 encode', '{not json', 'hash', '12345', 'eyJhbGciOi', '#hashtag', 'rgb', 'Tom & Jerry', 'Hello, world.\nHow are you?', 'note: remember this', '1.2.3', 'select', 'Selected items', '<b>not closed', 'pm', 'P', '-----BEGIN PRIVATE KEY-----\nAAAA\n-----END PRIVATE KEY-----']) {
     assert.equal(detect(value), null, value)
   }
 })

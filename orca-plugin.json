@@ -3,9 +3,9 @@
   "id": "dev-toolbox",
   "publisher": "thailoc-dev",
   "name": "Dev Toolbox",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "execution": "sandboxed-ui",
-  "description": "29 offline developer tools in Orca's sidebar: JWT, timestamps, cron, SQL/XML/JSON formatters, YAML, CSV, JSON to types, cURL to code, text transforms, hidden-character finder and more.",
+  "description": "35 offline developer tools in Orca's sidebar: JWT, SSL certificates, bcrypt, passwords, image to Base64, HTML to JSX, px to rem, SQL/JSON/XML formatters, cURL to code and more.",
   "license": "MIT",
   "repository": "https://github.com/thailoc-dev/orca-dev-toolbox",
   "engines": {
@@ -24,6 +24,6 @@
   "capabilities": [],
   "cover": {
     "path": "images/cover.png",
-    "alt": "Dev Toolbox in Orca's sidebar: the tool list with coloured icons, a formatted SQL query, and names turned into a SQL IN list"
+    "alt": "Dev Toolbox in Orca's sidebar: the tool list with coloured icons, a decoded TLS certificate with its expiry, and an SVG icon converted to a JSX component"
   }
 }

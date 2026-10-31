@@ -87,3 +87,45 @@ export function ulidTime(text) {
 
 /** Nano ID: 21 URL-safe characters, as the nanoid package makes them. */
 export const nanoid = (size = 21) => randomString(size, 'url-safe')
+
+const CLASSES = {
+  lower: 'abcdefghijklmnopqrstuvwxyz',
+  upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  digits: '0123456789',
+  symbols: '!@#$%^&*()-_=+[]{};:,.?/~'
+}
+const AMBIGUOUS = /[Il1O0o|`'"]/g
+
+/** A random index below `n`, without modulo bias. */
+function below(n) {
+  const limit = 2 ** 32 - (2 ** 32 % n)
+  for (;;) {
+    const [value] = crypto.getRandomValues(new Uint32Array(1))
+    if (value < limit) return value % n
+  }
+}
+
+/**
+ * A password with at least one character of each chosen class, shuffled. Returns { password,
+ * entropy } where entropy is in bits for the whole pool.
+ */
+export function generatePassword({ length = 20, lower = true, upper = true, digits = true, symbols = true, avoidAmbiguous = false } = {}) {
+  const chosen = Object.entries({ lower, upper, digits, symbols }).filter(([, on]) => on).map(([name]) => CLASSES[name])
+  const sets = (chosen.length ? chosen : [CLASSES.lower]).map((set) => (avoidAmbiguous ? set.replace(AMBIGUOUS, '') : set))
+  const pool = sets.join('')
+  const size = Math.max(length, sets.length)
+  const chars = sets.map((set) => set[below(set.length)])
+  while (chars.length < size) chars.push(pool[below(pool.length)])
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = below(i + 1)
+    ;[chars[i], chars[j]] = [chars[j], chars[i]]
+  }
+  return { password: chars.join(''), entropy: Math.round(size * Math.log2(pool.length)) }
+}
+
+export function strength(entropy) {
+  if (entropy < 40) return { label: 'weak', kind: 'bad' }
+  if (entropy < 60) return { label: 'fair', kind: '' }
+  if (entropy < 100) return { label: 'strong', kind: 'ok' }
+  return { label: 'very strong', kind: 'ok' }
+}

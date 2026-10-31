@@ -204,6 +204,23 @@ img.qr { width: min(100%, 240px); height: auto; image-rendering: pixelated; disp
 .char.hidden, .char.look-alike { background: color-mix(in srgb, var(--danger) 9%, transparent); }
 .char.hidden .glyph, .char.look-alike .glyph { color: color-mix(in srgb, var(--danger) 85%, var(--fg)); }
 
+/* Image to Base64 */
+.dropzone {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 22px 12px; text-align: center; cursor: pointer;
+  border: 1.5px dashed var(--border); border-radius: var(--radius); color: var(--muted-fg); font-size: 12px;
+}
+.dropzone strong { color: var(--fg); font-size: 13px; }
+.dropzone:hover, .dropzone:focus-visible, .dropzone.over { border-color: var(--ring); background: var(--accent); outline: none; }
+.dropzone input.file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.preview-frame { display: grid; place-items: center; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius);
+  background-color: var(--bg);
+  background-image: linear-gradient(45deg, var(--muted) 25%, transparent 25%, transparent 75%, var(--muted) 75%),
+    linear-gradient(45deg, var(--muted) 25%, transparent 25%, transparent 75%, var(--muted) 75%);
+  background-size: 12px 12px; background-position: 0 0, 6px 6px; }
+img.preview { max-width: 100%; max-height: 220px; display: block; }
+.row-value.clip { white-space: normal; word-break: break-all; }
+.out.password { font-size: 13px; letter-spacing: .02em; }
+
 /* Color */
 .color-input { flex-wrap: nowrap; }
 .swatch {
