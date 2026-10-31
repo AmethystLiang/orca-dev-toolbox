@@ -15,7 +15,7 @@ test('lists every tool by group in both themes without CSP violations', async ()
     const { page, frame, errors } = await openPanel(browser, { theme })
     const names = await frame.locator('.tool-item .tool-name').allTextContents()
     assert.deepEqual(names.sort(), TOOLS.map((tool) => tool.title).sort())
-    assert.deepEqual(await frame.locator('.group h2').allTextContents(), ['Inspect', 'Encode', 'Convert', 'Generate', 'Text'])
+    assert.deepEqual(await frame.locator('.group h2').allTextContents(), ['Inspect', 'Encode', 'Convert', 'Format', 'Generate', 'Text'])
     assert.equal(await frame.evaluate(() => document.activeElement.id), 'search')
     // Every tool shows its own icon tile.
     assert.equal(await frame.locator('.tool-item .tile svg').count(), TOOLS.length)
@@ -96,7 +96,12 @@ test('every tool opens and produces output without errors', async () => {
     curl: ['textarea', "curl https://x.dev -H 'A: b'", /fetch\("https:\/\/x\.dev"/],
     cidr: ['input', '10.0.0.0/30', /10\.0\.0\.2/],
     http: ['input', '429', /Too Many Requests/],
-    qr: ['textarea', 'https://onorca.dev', /modules/]
+    qr: ['textarea', 'https://onorca.dev', /modules/],
+    transform: ['textarea', 'Xin chào Đà Nẵng', /Xin chao Da Nang/],
+    chars: ['textarea', 'a\u200bb', /ZERO WIDTH SPACE/],
+    units: ['input', '1.5 GB', /1,500,000,000/],
+    xml: ['textarea', '<a><b>1</b></a>', /<a>\n  <b>1<\/b>\n<\/a>/],
+    sql: ['textarea', 'select a from t where x = 1 and y = 2', /WHERE x = 1\n  AND y = 2/]
   }
   for (const tool of TOOLS) {
     await frame.locator('#search').fill(tool.title)

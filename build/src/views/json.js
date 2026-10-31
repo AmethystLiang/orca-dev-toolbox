@@ -4,7 +4,7 @@ import { checkbox, errorText, field, h, hint, output, segmented, set, textarea }
 export default {
   id: 'json',
   title: 'JSON Formatter',
-  group: 'Text',
+  group: 'Format',
   icon: 'braces',
   color: '#eab308',
   description: 'Validate, pretty-print, minify and sort JSON',

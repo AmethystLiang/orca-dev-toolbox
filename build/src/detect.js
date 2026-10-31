@@ -3,6 +3,7 @@
 import { base64ToBytes, bytesToText } from './tools/codec.js'
 import { parseCron } from './tools/cron.js'
 import { guessDelimiter, parseCsv } from './tools/csv.js'
+import { tokenizeXml } from './tools/xml.js'
 import { parseYaml } from './tools/yaml.js'
 
 const JWT = /^(Bearer\s+)?eyJ[\w-]*\.eyJ[\w-]*\.[\w-]*$/
@@ -16,6 +17,11 @@ const ULID = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/
 const CURL = /^curl\s/
 const IPV4_CIDR = /^\d{1,3}(\.\d{1,3}){3}(\/\d{1,2}|\s+\d{1,3}(\.\d{1,3}){3})?$/
 const IPV6_CIDR = /^[0-9a-f:]*::?[0-9a-f:]*(\/\d{1,3})$/i
+const SQL = /^(select|insert\s+into|update|delete\s+from|with|create\s+(table|view|index)|alter\s+table)\s/i
+const XML = /^<(\?xml|[A-Za-z_][\w:.-]*)[\s\S]*>$/
+const SIZE = /^\d+(\.\d+)?\s*([kmgtp]i?b|bytes?)$/i
+const DURATION = /^(\d+(\.\d+)?(ms|s|m|h|d))+$|^p(\d+[wd])*(t(\d+(\.\d+)?[hms])+)?$/i
+const HIDDEN = /[\u200b-\u200f\u2060-\u2064\ufeff\u00ad\u202a-\u202e\u2066-\u2069]/
 const YAML_KEY = /^(---\s*\n)?[\w.-]+:(\s|$)/
 const HEX_COLOR = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i
 const COLOR_FN = /^(rgba?|hsla?|oklch)\([^()]*\)$/i
@@ -37,6 +43,15 @@ function isCron(text) {
   if (!/^(@\w+|(\S+\s+){4}\S+)$/.test(text)) return false
   try {
     parseCron(text)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function isXml(text) {
+  try {
+    tokenizeXml(text)
     return true
   } catch {
     return false
@@ -79,7 +94,9 @@ function isBase64Text(text) {
 export function detect(value) {
   const text = value.trim()
   if (!text) return null
+  if (HIDDEN.test(value)) return 'chars'
   if (CURL.test(text)) return 'curl'
+  if (SQL.test(text)) return 'sql'
   if (JWT.test(text)) return 'jwt'
   if (UUID.test(text) || ULID.test(text)) return 'ids'
   if (IPV4_CIDR.test(text) || IPV6_CIDR.test(text)) return 'cidr'
@@ -88,6 +105,9 @@ export function detect(value) {
   if (PREFIXED_NUMBER.test(text)) return 'number'
   if (SYMBOLIC_MODE.test(text)) return 'chmod'
   if (isJson(text)) return 'json'
+  if (XML.test(text) && isXml(text)) return 'xml'
+  if (SIZE.test(text)) return 'units'
+  if (DURATION.test(text) && /\d/.test(text)) return 'units'
   if (text.includes('\n') && YAML_KEY.test(text) && isYaml(text)) return 'yaml'
   if (isCsv(text)) return 'csv'
   if (URL_LIKE.test(text)) return 'url'

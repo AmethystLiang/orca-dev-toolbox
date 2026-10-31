@@ -357,3 +357,79 @@ test('HTTP status search', () => {
   assert.ok(searchStatus('rate').some(([c]) => c === 429))
   assert.equal(searchStatus('teapot')[0][0], 418)
 })
+
+import { removeAccents, slugify, transform } from '../src/tools/transform.js'
+import { clean, inspect } from '../src/tools/chars.js'
+import { formatSize, humanDuration, isoDuration, parseDuration, parseSize } from '../src/tools/units.js'
+import { formatXml, minifyXml } from '../src/tools/xml.js'
+import { formatSql, minifySql } from '../src/tools/sql.js'
+
+test('text transforms: accents, slugs, lists, SQL IN, Markdown tables', () => {
+  assert.equal(removeAccents('Tiếng Việt: Đường phố, café, naïve'), 'Tieng Viet: Duong pho, cafe, naive')
+  assert.equal(slugify('  Hướng dẫn: Cài đặt Orca (2026)! '), 'huong-dan-cai-dat-orca-2026')
+  assert.equal(transform('a\n b \n\nc', 'sqlIn'), "('a', 'b', 'c')")
+  assert.equal(transform("O'Brien\nAnn", 'sqlIn'), "('O''Brien', 'Ann')")
+  assert.equal(transform('1\n2\n3', 'sqlIn'), '(1, 2, 3)')
+  assert.equal(transform('1\n2', 'jsonArray'), '[1,2]')
+  assert.equal(transform('x\ny', 'jsonArray'), '["x","y"]')
+  assert.equal(transform('["a", 2]', 'fromJson'), 'a\n2')
+  assert.equal(transform('a, b;c', 'fromList'), 'a\nb\nc')
+  assert.equal(transform('a\nb', 'toList', { separator: ' | ' }), 'a | b')
+  assert.equal(transform('a\nb', 'wrap', { prefix: '"', suffix: '",' }), '"a",\n"b",')
+  assert.equal(transform('“Hi” it’s…', 'straight'), '"Hi" it\'s...')
+  assert.equal(transform('name\tage\nAda\t36', 'table'), '| name | age |\n| ---- | --- |\n| Ada  | 36  |')
+  assert.equal(transform('ab👋🏽', 'reverse'), '👋🏽ba')
+})
+
+test('character inspector flags hidden, look-alike and decomposed characters', () => {
+  const report = inspect('pаypal​.com')
+  assert.equal(report.hidden, 1)
+  assert.equal(report.lookalikes, 1)
+  assert.equal(report.chars[1].code, 'U+0430')
+  assert.equal(report.chars[6].name, 'ZERO WIDTH SPACE')
+  assert.equal(inspect('Việt'.normalize('NFD')).normalization, 'NFD')
+  assert.equal(inspect('Việt').normalization, 'NFC')
+  assert.equal(inspect('abc').normalization, 'plain')
+  assert.equal(clean('﻿a​b c 👨‍👩‍👧'), 'ab c 👨‍👩‍👧')
+  assert.equal(inspect('é').chars[0].utf8, 'C3 A9')
+})
+
+test('sizes and durations', () => {
+  assert.equal(parseSize('1.5 GB'), 1.5e9)
+  assert.equal(parseSize('512MiB'), 512 * 1024 ** 2)
+  assert.equal(parseSize('2g'), 2 * 1024 ** 3)
+  assert.equal(formatSize(1536), '1.54 KB')
+  assert.equal(formatSize(1536, true), '1.5 KiB')
+  assert.throws(() => parseSize('3 parsecs'), /Unknown unit/)
+  assert.equal(parseDuration('1h30m'), 5400e3)
+  assert.equal(parseDuration('1d 2h 3m 4s'), 93784e3)
+  assert.equal(parseDuration('01:30:00'), 5400e3)
+  assert.equal(parseDuration('PT1H30M'), 5400e3)
+  assert.equal(parseDuration('90', 's'), 90e3)
+  assert.equal(parseDuration('2 hours and 15 minutes'), 8100e3)
+  assert.equal(humanDuration(93784250), '1d 2h 3m 4s 250ms')
+  assert.equal(isoDuration(93784e3), 'P1DT2H3M4S')
+  assert.equal(isoDuration(0), 'PT0S')
+  assert.throws(() => parseDuration('soon'), /Not a duration/)
+})
+
+test('XML formats, minifies and reports where nesting breaks', () => {
+  assert.equal(formatXml('<a x="1"><b>hi</b><c/><d></d><!-- n --></a>'), '<a x="1">\n  <b>hi</b>\n  <c/>\n  <d></d>\n  <!-- n -->\n</a>')
+  assert.equal(formatXml('<a><b>1</b></a>', { indent: '\t' }), '<a>\n\t<b>1</b>\n</a>')
+  assert.equal(minifyXml('<a>\n  <b  x="1"  >hi   there</b>\n  <!-- c -->\n</a>'), '<a><b x="1">hi there</b></a>')
+  assert.equal(formatXml('<p a="x > y">t</p>'), '<p a="x > y">t</p>')
+  assert.throws(() => formatXml('<a>\n<b></a>'), /Line 2: <\/a> where <\/b> was expected/)
+  assert.throws(() => formatXml('<a>'), /never closed/)
+})
+
+test('SQL formats clauses, conditions and subqueries', () => {
+  assert.equal(formatSql("select a, b from t where x = 1 and y in (select id from u where z) order by a desc"), [
+    'SELECT', '  a,', '  b', 'FROM t', 'WHERE x = 1', '  AND y IN (', '    SELECT id', '    FROM u', '    WHERE z', '  )', 'ORDER BY a DESC', ''
+  ].join('\n'))
+  assert.equal(formatSql("SELECT count(*) FROM t LEFT JOIN u ON u.id = t.uid AND u.ok WHERE d BETWEEN 1 AND 2"), [
+    'SELECT count(*)', 'FROM t', 'LEFT JOIN u', '  ON u.id = t.uid', '  AND u.ok', 'WHERE d BETWEEN 1 AND 2', ''
+  ].join('\n'))
+  assert.equal(formatSql("insert into t (a) values ('it''s -- not a comment')", { uppercase: false }), "insert into t (a)\nvalues ('it''s -- not a comment')\n")
+  assert.equal(formatSql('select t.order, x::text from "Order" t'), 'SELECT\n  t.order,\n  x::text\nFROM "Order" t\n')
+  assert.equal(minifySql('select a ,\n b -- c\n from t'), 'select a, b from t')
+})

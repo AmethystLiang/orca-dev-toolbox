@@ -43,7 +43,7 @@ export default {
         const image = h('img', { class: 'qr', alt: `QR code for ${text.slice(0, 80)}`, src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}` })
         set(result,
           h('div', { class: 'qr-frame' }, image),
-          h('div', { class: 'bar' }, copyButton(() => svg, 'Copy as SVG'), h('span', { class: 'hint' }, 'Copies the SVG markup')),
+          h('div', { class: 'bar' }, copyButton(() => svg, 'Copy as SVG', 'Copy SVG')),
           hint(`${qr.modules}×${qr.modules} modules, ${new TextEncoder().encode(text).length} bytes. Higher error correction survives smudges but makes a denser code.`))
       } catch {
         set(result, hint('Too long for a QR code: the limit is about 2,900 bytes at level L.'))

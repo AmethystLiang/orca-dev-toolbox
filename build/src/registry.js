@@ -4,6 +4,7 @@
 // detect.js its shape.
 import base64 from './views/base64.js'
 import changeCase from './views/case.js'
+import chars from './views/chars.js'
 import chmod from './views/chmod.js'
 import color from './views/color.js'
 import cidr from './views/cidr.js'
@@ -21,20 +22,25 @@ import lines from './views/lines.js'
 import number from './views/number.js'
 import qr from './views/qr.js'
 import regex from './views/regex.js'
+import sql from './views/sql.js'
 import stats from './views/stats.js'
 import time from './views/time.js'
+import transform from './views/transform.js'
 import types from './views/types.js'
+import units from './views/units.js'
 import url from './views/url.js'
+import xml from './views/xml.js'
 import yaml from './views/yaml.js'
 
-export const GROUPS = ['Inspect', 'Encode', 'Convert', 'Generate', 'Text']
+export const GROUPS = ['Inspect', 'Encode', 'Convert', 'Format', 'Generate', 'Text']
 
 export const TOOLS = [
-  jwt, time, cron, http, cidr,
+  jwt, time, cron, http, cidr, chars,
   base64, url, escape,
-  yaml, csv, types, curl, color, number, chmod,
+  yaml, csv, types, curl, units, color, number, chmod,
+  json, sql, xml,
   ids, hash, qr,
-  json, regex, diff, changeCase, lines, stats
+  transform, changeCase, regex, diff, lines, stats
 ]
 
 /** Tools whose title, description or keywords contain every word of the query. */

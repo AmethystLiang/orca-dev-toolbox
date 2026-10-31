@@ -41,13 +41,23 @@ test('recognises each kind of pasted value', () => {
     ['2001:db8::/32', 'cidr'],
     ['name: app\nreplicas: 2\nports:\n  - 80', 'yaml'],
     ['name,email\nAda,ada@x.dev\nBob,bob@x.dev', 'csv'],
-    ['a\tb\n1\t2', 'csv']
+    ['a\tb\n1\t2', 'csv'],
+    ['SELECT id FROM users WHERE active', 'sql'],
+    ['insert into t values (1)', 'sql'],
+    ['<?xml version="1.0"?><a><b/></a>', 'xml'],
+    ['<svg viewBox="0 0 1 1"><path d="M0 0"/></svg>', 'xml'],
+    ['1.5 GB', 'units'],
+    ['512MiB', 'units'],
+    ['1h30m', 'units'],
+    ['250ms', 'units'],
+    ['PT1H30M', 'units'],
+    ['hello\u200bworld', 'chars']
   ]
   for (const [value, tool] of cases) assert.equal(detect(value), tool, value)
 })
 
 test('leaves ordinary words and broken values to the search', () => {
-  for (const value of ['', '   ', 'json', 'password', 'base64 encode', '{not json', 'hash', '12345', 'eyJhbGciOi', '#hashtag', 'rgb', 'Tom & Jerry', 'Hello, world.\nHow are you?', 'note: remember this', '1.2.3']) {
+  for (const value of ['', '   ', 'json', 'password', 'base64 encode', '{not json', 'hash', '12345', 'eyJhbGciOi', '#hashtag', 'rgb', 'Tom & Jerry', 'Hello, world.\nHow are you?', 'note: remember this', '1.2.3', 'select', 'Selected items', '<b>not closed', 'pm', 'P']) {
     assert.equal(detect(value), null, value)
   }
 })

@@ -50,8 +50,8 @@ export async function copyText(text) {
 }
 
 /** A Copy button for whatever `get()` returns at click time. */
-export function copyButton(get, label = 'Copy') {
-  const button = h('button', { type: 'button', class: 'copy', title: label, 'aria-label': label }, 'Copy')
+export function copyButton(get, label = 'Copy', text = 'Copy') {
+  const button = h('button', { type: 'button', class: 'copy', title: label, 'aria-label': label }, text)
   button.addEventListener('click', async () => {
     const value = get()
     if (!value) return
@@ -59,7 +59,7 @@ export function copyButton(get, label = 'Copy') {
     button.textContent = ok ? 'Copied' : 'Select ⌘C'
     button.classList.toggle('done', ok)
     setTimeout(() => {
-      button.textContent = 'Copy'
+      button.textContent = text
       button.classList.remove('done')
     }, 1200)
   })

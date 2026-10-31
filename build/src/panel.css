@@ -189,6 +189,21 @@ button.copy.done { color: var(--fg); border-color: var(--ring); }
 .qr-frame { display: grid; place-items: center; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; }
 img.qr { width: min(100%, 240px); height: auto; image-rendering: pixelated; display: block; }
 
+/* Text transform: the actions wrap as a grid of chips. */
+.segmented.chips-grid { display: flex; }
+.segmented.chips-grid button { font-size: 12px; padding: 3px 8px; }
+
+/* Character inspector */
+.chars { border: 1px solid var(--border); border-radius: var(--radius); max-height: 420px; overflow: auto; }
+.char { display: grid; grid-template-columns: 26px 62px 1fr auto; gap: 6px; align-items: center; padding: 3px 8px; font-size: 12px; }
+.char + .char { border-top: 1px solid var(--border); }
+.char .glyph { font: 15px var(--mono); text-align: center; }
+.char .code { font: 11px var(--mono); color: var(--muted-fg); }
+.char .what { color: var(--muted-fg); font-size: 11.5px; min-width: 0; overflow-wrap: anywhere; }
+.char .bytes { font: 11px var(--mono); color: var(--muted-fg); }
+.char.hidden, .char.look-alike { background: color-mix(in srgb, var(--danger) 9%, transparent); }
+.char.hidden .glyph, .char.look-alike .glyph { color: color-mix(in srgb, var(--danger) 85%, var(--fg)); }
+
 /* Color */
 .color-input { flex-wrap: nowrap; }
 .swatch {
