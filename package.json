@@ -1,0 +1,29 @@
+{
+  "name": "orca-dev-toolbox",
+  "version": "0.5.0",
+  "private": true,
+  "description": "Offline developer tools in Orca's sidebar",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thailoc-dev/orca-dev-toolbox.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test \"test/**/*.test.mjs\"",
+    "check": "node scripts/build.mjs && git diff --exit-code -- panel/index.html"
+  },
+  "dependencies": {
+    "bcryptjs": "3.0.3",
+    "js-yaml": "5.5.0",
+    "qrcode-generator": "2.0.4"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "playwright-core": "1.64.1"
+  }
+}

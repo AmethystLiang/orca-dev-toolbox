@@ -5,7 +5,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-const PANEL_HTML = readFileSync(path.resolve(import.meta.dirname, '..', '..', 'panel', 'index.html'), 'utf8')
+const PANEL_HTML = readFileSync(path.resolve(import.meta.dirname, '..', 'panel', 'index.html'), 'utf8')
 
 const CSP =
   "default-src 'none'; connect-src 'none'; script-src 'unsafe-inline'; " +

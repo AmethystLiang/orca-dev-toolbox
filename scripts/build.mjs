@@ -1,16 +1,15 @@
-// Builds ../panel/index.html: one self-contained file, because the panel frame's CSP allows only
-// inline scripts and styles, with no network, workers or eval.
-// Usage: npm ci --ignore-scripts && node build.mjs
+// Builds panel/index.html as one self-contained file: the panel frame's CSP allows only inline
+// scripts and styles, with no network, workers or eval.
 import { build, transform } from 'esbuild'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import vm from 'node:vm'
 
-const HERE = import.meta.dirname
-const OUT = path.resolve(HERE, '..', 'panel', 'index.html')
+const ROOT = path.resolve(import.meta.dirname, '..')
+const OUT = path.join(ROOT, 'panel', 'index.html')
 
 const result = await build({
-  entryPoints: [path.join(HERE, 'src', 'panel.js')],
+  entryPoints: [path.join(ROOT, 'src', 'panel.js')],
   bundle: true,
   write: false,
   format: 'iife',
@@ -20,9 +19,9 @@ const result = await build({
   legalComments: 'none',
   alias: { crypto: './src/shims/no-node-crypto.js' },
   logLevel: 'warning',
-  absWorkingDir: HERE
+  absWorkingDir: ROOT
 })
-const css = (await transform(readFileSync(path.join(HERE, 'src', 'panel.css'), 'utf8'), { loader: 'css', minify: true })).code.trim()
+const css = (await transform(readFileSync(path.join(ROOT, 'src', 'panel.css'), 'utf8'), { loader: 'css', minify: true })).code.trim()
 const js = result.outputFiles[0].text.replace(/<(!--|script)/gi, '\\x3C$1').trim()
 new vm.Script(js)
 if (/<\/script/i.test(js) || /<\/style/i.test(css)) throw new Error('the bundle contains a closing script or style tag')
