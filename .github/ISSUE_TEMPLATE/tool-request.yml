@@ -1,0 +1,15 @@
+name: Tool request
+description: Suggest a tool or an improvement to one.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What do you want to do?
+      description: The task, and what you use for it today.
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Example input and output

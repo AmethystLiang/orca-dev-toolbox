@@ -1,0 +1,24 @@
+name: Bug
+description: Something in a tool gives the wrong result or breaks.
+labels: [bug]
+body:
+  - type: input
+    id: tool
+    attributes:
+      label: Tool
+      placeholder: JWT Decoder
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you pasted or clicked, what you expected, and what you got. Leave out real tokens and secrets.
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Dev Toolbox and Orca versions, and your OS.
+      placeholder: Dev Toolbox 0.5.0, Orca 1.4.245, macOS 15
