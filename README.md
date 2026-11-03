@@ -18,7 +18,7 @@ From the community catalog: open
 To get the latest release before the catalog picks it up, install from Git in Settings → Plugins:
 
 ```
-https://github.com/thailoc-dev/orca-dev-toolbox.git#v0.6.0
+https://github.com/thailoc-dev/orca-dev-toolbox.git#v0.6.1
 ```
 
 Requires Orca 1.4.245 or later.
@@ -60,6 +60,8 @@ The panel runs in Orca's sandboxed frame, which blocks all network access. Nothi
 leaves your machine, and the plugin asks Orca for no permissions.
 
 ## Contributing
+
+If Dev Toolbox saves you a trip to a website, a ⭐ on this repository helps other Orca users find it.
 
 Bug reports and tool requests are welcome in [issues](https://github.com/thailoc-dev/orca-dev-toolbox/issues).
 See [CONTRIBUTING.md](CONTRIBUTING.md) to build and test locally.

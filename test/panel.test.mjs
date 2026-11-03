@@ -255,3 +255,28 @@ test('docker, env, JSON query, VietQR and TOTP work end to end', async () => {
   assert.deepEqual(errors, [])
   await page.close()
 })
+
+test('footer links open GitHub through Orca, or copy the address on older Orca', async () => {
+  const { page, frame, errors } = await openPanel(browser)
+  const star = frame.locator('.home-footer button').first()
+  assert.equal(await star.textContent(), '★ Star on GitHub')
+  // Older Orca has no shell.openExternal: the button changes to say what it did instead.
+  await star.click()
+  assert.notEqual(await star.textContent(), '★ Star on GitHub')
+  await frame.evaluate(() => {
+    window.opened = []
+    window.orca = {
+      host: { has: (name) => name === 'shell.openExternal' },
+      shell: { openExternal: async (url) => { window.opened.push(url); return { opened: true } } }
+    }
+  })
+  await frame.locator('.home-footer button').nth(1).click()
+  await frame.locator('#search').fill('zzzz')
+  await frame.locator('.empty button.link').click()
+  assert.deepEqual(await frame.evaluate(() => window.opened), [
+    'https://github.com/thailoc-dev/orca-dev-toolbox/issues/new/choose',
+    'https://github.com/thailoc-dev/orca-dev-toolbox/issues/new/choose'
+  ])
+  assert.deepEqual(errors, [])
+  await page.close()
+})

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.1 – 2026-11-03
+
+### Added
+- Star on GitHub and Request a tool links under the tool list, and a request link when a search finds nothing. Orca 1.4.246 and later opens them in the browser; older versions copy the address.
+
 ## 0.6.0 – 2026-11-03
 
 ### Added
