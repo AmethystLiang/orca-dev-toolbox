@@ -101,7 +101,7 @@ export const FIELDS = {
   status: { label: 'status', make: (r) => pick(r, ['active', 'pending', 'suspended', 'deleted']) },
   ip: { label: 'IPv4', make: (r) => `${int(r, 11, 223)}.${int(r, 0, 255)}.${int(r, 0, 255)}.${int(r, 1, 254)}` },
   url: { label: 'website', make: (r, c) => `https://${slug(c.person.last)}${int(r, 1, 99)}.${pick(r, DATA[c.locale].domains)}` },
-  avatar: { label: 'avatar URL', make: (r, c) => `https://i.pravatar.cc/150?u=${c.person.handle}` }
+  avatar: { label: 'avatar URL', make: (r, c) => `https://avatars.example.com/${c.person.handle}.png` }
 }
 
 export const DEFAULT_FIELDS = ['id', 'name', 'email', 'phone', 'city', 'createdAt']

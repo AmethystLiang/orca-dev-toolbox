@@ -3,7 +3,7 @@
   "id": "dev-toolbox",
   "publisher": "thailoc-dev",
   "name": "Dev Toolbox",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "execution": "sandboxed-ui",
   "description": "43 offline developer tools in Orca's sidebar: JWT, certificates, Docker run to Compose, .env to Kubernetes, JSONPath, semver, 2FA codes, mock data, VietQR and more.",
   "license": "MIT",

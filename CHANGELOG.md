@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.2 – 2026-11-05
+
+### Changed
+- Removed the Star on GitHub and Request a tool links from the panel for now, so the update needs no new domains.
+- Mock Data avatar URLs use a reserved example domain.
+
 ## 0.6.1 – 2026-11-03
 
 ### Added

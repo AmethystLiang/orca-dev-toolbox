@@ -78,11 +78,6 @@ html.dark .tile {
 .tool-name { font-weight: 600; }
 .tool-desc { font-size: 12px; color: var(--muted-fg); }
 .empty { color: var(--muted-fg); padding: 8px; margin: 0; }
-.empty p { margin: 0 0 6px; }
-.home-footer { display: flex; white-space: nowrap; gap: 8px; align-items: center; justify-content: center; padding: 16px 8px 4px; color: var(--muted-fg); font-size: 12px; }
-button.link { background: none; border: 0; padding: 2px 0; color: var(--muted-fg); font: inherit; font-size: 12px; cursor: pointer; }
-.empty button.link { text-decoration: underline; }
-button.link:hover, button.link:focus-visible { color: var(--fg); text-decoration: underline; }
 
 /* A tool: a header with the way back, then its view. */
 .tool-header {
