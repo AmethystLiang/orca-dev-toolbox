@@ -3,6 +3,7 @@
 import { base64ToBytes, bytesToText } from './tools/codec.js'
 import { parseCron } from './tools/cron.js'
 import { guessDelimiter, parseCsv } from './tools/csv.js'
+import { parseCccd } from './tools/vnid.js'
 import { tokenizeXml } from './tools/xml.js'
 import { parseYaml } from './tools/yaml.js'
 
@@ -37,6 +38,11 @@ const OTPAUTH = /^otpauth:\/\/(totp|hotp)\//i
 const EMV_QR = /^000201\d{2}[\s\S]*6304[0-9A-F]{4}$/i
 // A bare 1.2.3 is left to the search: it is as likely a section number as a version.
 const VERSION_OR_RANGE = /^(([~^]|[<>]=?|=)\s*|v)\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$|^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+|\+[0-9A-Za-z.-]+)+$|^[~^]\d+(\.(\d+|x))?(\.(\d+|x))?$/
+const USER_AGENT = /^(user-agent:\s*)?(Mozilla\/5\.0 \(|Opera\/\d|(curl|Wget|python-requests|PostmanRuntime|okhttp|Go-http-client)\/\d+\.\d)/i
+const VN_PHONE = /^(\+?84|0)[35789]\d{8}$/
+const MST_BRANCH = /^\d{10}-\d{3}$/
+const VN_AMOUNT = /^-?\d[\d.,]*\s*(đ|₫|vnd|đồng|tỷ|tỉ|triệu|tr|nghìn|ngàn)$/iu
+const PORT = /^:\d{2,5}$/
 const ESCAPED = /&(#\d+|#x[0-9a-f]+|[a-z]+\d*);|\\u(\{[0-9a-f]+\}|[0-9a-f]{4})/i
 
 // Every non-comment line is NAME=value with an upper-case name, as in .env files.
@@ -107,6 +113,13 @@ function isBase64Text(text) {
   }
 }
 
+// A 12-digit citizen ID: a province code, a sex/century digit and a birth year not in the future.
+function isCccd(text) {
+  if (!/^\d{12}$/.test(text)) return false
+  const { valid } = parseCccd(text)
+  return valid
+}
+
 export function detect(value) {
   const text = value.trim()
   if (!text) return null
@@ -123,6 +136,10 @@ export function detect(value) {
   if (SQL.test(text)) return 'sql'
   if (JWT.test(text)) return 'jwt'
   if (UUID.test(text) || ULID.test(text)) return 'ids'
+  if (USER_AGENT.test(text) && !text.includes('\n')) return 'useragent'
+  if (VN_PHONE.test(text.replace(/[\s.]/g, '')) || MST_BRANCH.test(text) || isCccd(text)) return 'vnid'
+  if (VN_AMOUNT.test(text)) return 'numwords'
+  if (PORT.test(text)) return 'ports'
   if (IPV4_CIDR.test(text) || IPV6_CIDR.test(text)) return 'cidr'
   if (VERSION_OR_RANGE.test(text)) return 'semver'
   if (TIMESTAMP.test(text) || ISO_DATE.test(text)) return 'time'

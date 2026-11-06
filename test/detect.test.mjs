@@ -83,3 +83,23 @@ test('recognises docker run, SSH keys, otpauth URIs, payment QR payloads, .env a
   ]
   for (const [value, tool] of cases) assert.equal(detect(value), tool, value)
 })
+
+test('recognises User-Agents, Vietnamese IDs and phone numbers, amounts and ports', () => {
+  const cases = [
+    ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36', 'useragent'],
+    ['User-Agent: curl/8.7.1', 'useragent'],
+    ['0987 654 321', 'vnid'],
+    ['+84912345678', 'vnid'],
+    ['079303001234', 'vnid'],
+    ['0100109106-001', 'vnid'],
+    ['150.000đ', 'numwords'],
+    ['1,5 tỷ', 'numwords'],
+    ['2 triệu', 'numwords'],
+    [':5432', 'ports'],
+    // Still timestamps: not a mobile prefix, and 12 digits that are no citizen ID.
+    ['1700000000', 'time'],
+    ['1700000000000', 'time']
+  ]
+  for (const [value, tool] of cases) assert.equal(detect(value), tool, value)
+  assert.notEqual(detect('123456789012'), 'vnid')
+})

@@ -27,7 +27,9 @@ import jwt from './views/jwt.js'
 import lines from './views/lines.js'
 import mock from './views/mock.js'
 import number from './views/number.js'
+import numwords from './views/numwords.js'
 import password from './views/password.js'
+import ports from './views/ports.js'
 import qr from './views/qr.js'
 import regex from './views/regex.js'
 import semver from './views/semver.js'
@@ -40,19 +42,21 @@ import transform from './views/transform.js'
 import types from './views/types.js'
 import units from './views/units.js'
 import url from './views/url.js'
+import useragent from './views/useragent.js'
 import vietqr from './views/vietqr.js'
+import vnid from './views/vnid.js'
 import xml from './views/xml.js'
 import yaml from './views/yaml.js'
 
 export const GROUPS = ['Inspect', 'Encode', 'Convert', 'Format', 'Generate', 'Text']
 
 export const TOOLS = [
-  jwt, cert, sshkey, time, cron, semver, http, cidr, chars,
+  jwt, cert, sshkey, useragent, vnid, time, cron, semver, http, ports, cidr, chars,
   base64, image, url, escape,
   yaml, csv, env, docker, types, curl, jsx, cssunits, units, color, number, chmod,
   json, jsonpath, sql, xml,
   password, ids, totp, hash, bcrypt, mock, qr, vietqr,
-  transform, changeCase, regex, diff, lines, stats
+  transform, changeCase, numwords, regex, diff, lines, stats
 ]
 
 /** Tools whose title, description or keywords contain every word of the query. */
