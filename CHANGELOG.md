@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.7.0 – 2026-11-06
+
+### Added
+- Number to Words: amounts in Vietnamese and English words, with đồng, "lẻ" or "linh", and shorthands like 150k or 1,5 tỷ.
+- User-Agent: browser, engine, OS, device, in-app browsers (Zalo, Facebook…), bots and HTTP clients, with the limits of reduced UAs.
+- Vietnam IDs: citizen ID (CCCD) birth province, sex and year; tax code (MST) check digit; phone number network and +84 form.
+- Ports: what usually listens on a port or range, and which IANA range it is in.
+- Pin tools with the ☆ in a tool's header; pinned tools stay at the top of the list.
+- Pasting a User-Agent, a Vietnamese phone number, citizen ID or tax code, an amount such as `150.000đ`, or `:5432` opens its tool.
+
+### Changed
+- Requires Orca 1.4.246 or later; the deprecated `publisher` field is gone from the manifest.
+
 ## 0.6.2 – 2026-11-05
 
 ### Changed
