@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.8.0 – 2026-11-07
+
+### Added
+- JSON Diff: what was added, removed or changed between two JSON documents, by path and whatever the key order, with keys to ignore and arrays in any order. For comparing API responses between environments.
+- TOML ↔ JSON / YAML: Cargo.toml, pyproject.toml and other TOML configs. Pasting TOML opens it.
+- Redact Secrets: masks API keys and tokens (GitHub, OpenAI, Anthropic, AWS, Stripe, Slack…), JWTs, private keys, passwords in URLs, Authorization and Cookie headers and fields named like password or token, before a log goes into an issue or a prompt.
+- Token Counter: an estimate of LLM tokens for a prompt, file or diff, how much of a 32K, 128K, 200K or 1M context window it fills, and its cost at a price you enter.
+- Clean Terminal Output: strips ANSI colour and cursor codes, including ones written out as `\x1b[` or `\033[`, from terminal output and CI logs. Pasting coloured output opens it.
+
+### Changed
+- Pinned and recent tools and the tool you had open are kept in Orca's plugin storage, so the plugin now asks for its own storage folder (`storage:own`). Pins saved by 0.7.0 carry over.
+- Search puts a tool whose name matches exactly first.
+- Text Stats uses the Token Counter's estimate, which counts accented and CJK text more closely.
+
+### Removed
+- Number to Words, Vietnam IDs and VietQR: Dev Toolbox keeps to tools for development and testing work.
+
 ## 0.7.0 – 2026-11-06
 
 ### Added

@@ -2,9 +2,9 @@
   "manifestVersion": 2,
   "id": "dev-toolbox",
   "name": "Dev Toolbox",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "execution": "sandboxed-ui",
-  "description": "47 offline developer tools in Orca's sidebar: JWT, certificates, Docker run to Compose, .env to Kubernetes, JSONPath, User-Agent, ports, 2FA codes, VietQR, Vietnamese IDs and more.",
+  "description": "49 offline developer tools in Orca's sidebar: JWT, certificates, Docker run to Compose, JSON diff, TOML, secret redaction, LLM token counter, ANSI log cleaner, cron, regex and more.",
   "license": "MIT",
   "repository": "https://github.com/thailoc-dev/orca-dev-toolbox",
   "engines": {
@@ -20,9 +20,13 @@
       }
     ]
   },
-  "capabilities": [],
+  "capabilities": [
+    {
+      "kind": "storage:own"
+    }
+  ],
   "cover": {
     "path": "images/cover.png",
-    "alt": "Dev Toolbox in Orca's sidebar: the tool list, a docker run command converted to a Compose service, and a VietQR bank-transfer code"
+    "alt": "Dev Toolbox in Orca's sidebar: the tool list, a docker run command converted to a Compose service, and colour codes stripped from test output"
   }
 }

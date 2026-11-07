@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Decode a JWT, convert a timestamp or format some JSON without leaving [Orca](https://www.onorca.dev)
-or asking an agent. 47 small tools in the right sidebar, all offline.
+or asking an agent. 49 small tools in the right sidebar, all offline.
 
 ![Dev Toolbox in Orca's sidebar](images/cover.png)
 
@@ -18,7 +18,7 @@ From the community catalog: open
 To get the latest release before the catalog picks it up, install from Git in Settings → Plugins:
 
 ```
-https://github.com/thailoc-dev/orca-dev-toolbox.git#v0.7.0
+https://github.com/thailoc-dev/orca-dev-toolbox.git#v0.8.0
 ```
 
 Requires Orca 1.4.246 or later.
@@ -26,40 +26,41 @@ Requires Orca 1.4.246 or later.
 ## Usage
 
 Open the panel from the wrench icon in the right sidebar, then paste something into the search
-box. Dev Toolbox recognises JWTs, timestamps, JSON, YAML, CSV, SQL, URLs, cron expressions, curl
+box. Dev Toolbox recognises JWTs, timestamps, JSON, YAML, TOML, CSV, SQL, URLs, cron expressions, curl
 and docker run commands, `.env` lines, certificates, SSH keys, colours, IP ranges, version ranges,
-User-Agents, phone numbers, amounts like `150.000đ` and more, and opens the matching tool with your input.
+User-Agents, terminal output with colour codes and more, and opens the matching tool with your input.
 
 You can also type to search (`sha256`, `epoch`, `snake`…). <kbd>Enter</kbd> opens the first result,
 <kbd>Esc</kbd> goes back to the list. Each tool keeps its input while you switch between them, and
-the ☆ in a tool's header pins it to the top of the list.
+the ☆ in a tool's header pins it to the top of the list. Pins and recent tools are kept between
+sessions.
 
 ## Tools
 
 **Inspect** · JWT (decode, verify and sign HS256/384/512) · Certificate & CSR · SSH Key fingerprints ·
-User-Agent · Vietnam IDs (CCCD, tax code, phone) · Timestamp · Cron · Semver ranges · HTTP Status ·
+User-Agent · Timestamp · Cron · Semver ranges · HTTP Status ·
 Ports · Subnet / CIDR · Character Inspector
 
 **Encode** · Base64 · Image to Base64 · URL · HTML / JSON / Unicode escapes
 
-**Convert** · YAML ↔ JSON · CSV ↔ JSON · `.env` ↔ JSON, Kubernetes Secret or ConfigMap ·
+**Convert** · YAML ↔ JSON · TOML ↔ JSON / YAML · CSV ↔ JSON · `.env` ↔ JSON, Kubernetes Secret or ConfigMap ·
 docker run ↔ Compose · JSON to TypeScript, Go, Rust or Python · cURL to fetch, requests or HTTPie ·
 HTML to JSX · px ↔ rem · Size & Duration · Color (HEX, RGB, HSL, OKLCH) · Number Base · Chmod
 
-**Format** · JSON · JSON Query (JSONPath) · SQL · XML
+**Format** · JSON · JSON Diff (by path, any key order) · JSON Query (JSONPath) · SQL · XML · Clean Terminal Output (strip ANSI codes)
 
 **Generate** · Password · UUID v4/v7, ULID, Nano ID · TOTP / 2FA codes · Hash & HMAC · bcrypt &
-Basic Auth · Mock data (English or Vietnamese) · QR Code · VietQR bank transfers
+Basic Auth · Mock data (English or Vietnamese) · QR Code
 
-**Text** · Transform (remove accents, slugify, lists to SQL `IN`…) · Case Converter · Number to
-Words (Vietnamese and English) · Regex Tester · Diff · Line Tools · Stats
+**Text** · Redact Secrets (tokens, keys and passwords in logs) · Token Counter (LLM tokens, context window share, cost) · Transform (remove accents, slugify, lists to SQL `IN`…) · Case Converter · Regex Tester · Diff · Line Tools · Stats
 
 See the [changelog](CHANGELOG.md) for what changed in each release.
 
 ## Privacy
 
 The panel runs in Orca's sandboxed frame, which blocks all network access. Nothing you paste
-leaves your machine, and the plugin asks Orca for no permissions.
+leaves your machine. The only permission the plugin asks for is its own storage folder, where Orca
+keeps your pinned and recent tools.
 
 ## Contributing
 
