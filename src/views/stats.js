@@ -27,7 +27,7 @@ export default {
           ['UTF-16 units', format(c.codeUnits), c.codeUnits !== c.characters ? { text: 'JS .length' } : null],
           ['Tokens', `≈ ${format(c.tokens)}`, { text: 'estimate' }]
         ]),
-        hint(`Characters count what you see, so 👋🏽 is one. Tokens are about four characters each for English and code; real counts depend on the model. Reading time: ${minutes}.`))
+        hint(`Characters count what you see, so 👋🏽 is one. The token count is an estimate; Token Counter shows how much of a context window it fills. Reading time: ${minutes}.`))
     }
     source.addEventListener('input', update)
     update()

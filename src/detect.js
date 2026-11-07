@@ -1,10 +1,11 @@
 // Recognises what a pasted value is, so the home screen can open the right tool with it filled
 // in. Returns a tool id or null; checks run from the most specific shape to the loosest.
 import { base64ToBytes, bytesToText } from './tools/codec.js'
+import { hasAnsi } from './tools/ansi.js'
 import { parseCron } from './tools/cron.js'
 import { guessDelimiter, parseCsv } from './tools/csv.js'
-import { parseCccd } from './tools/vnid.js'
 import { tokenizeXml } from './tools/xml.js'
+import { guessFormat as guessConfigFormat, readValue } from './tools/toml.js'
 import { parseYaml } from './tools/yaml.js'
 
 const JWT = /^(Bearer\s+)?eyJ[\w-]*\.eyJ[\w-]*\.[\w-]*$/
@@ -35,13 +36,9 @@ const SYMBOLIC_MODE = /^[-dl]?[r-][w-][xsS-][r-][w-][xsS-][r-][w-][xtT-]$/
 const DOCKER_RUN = /^(sudo\s+)?(docker|podman)\s+(container\s+)?(run|create)\s/
 const SSH_KEY = /^([^\s#]+\s+)?(ssh-(rsa|ed25519|dss|ed448)|ecdsa-sha2-nistp\d+|sk-[\w-]+@openssh\.com)\s+AAAA[A-Za-z0-9+/]/m
 const OTPAUTH = /^otpauth:\/\/(totp|hotp)\//i
-const EMV_QR = /^000201\d{2}[\s\S]*6304[0-9A-F]{4}$/i
 // A bare 1.2.3 is left to the search: it is as likely a section number as a version.
 const VERSION_OR_RANGE = /^(([~^]|[<>]=?|=)\s*|v)\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$|^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+|\+[0-9A-Za-z.-]+)+$|^[~^]\d+(\.(\d+|x))?(\.(\d+|x))?$/
 const USER_AGENT = /^(user-agent:\s*)?(Mozilla\/5\.0 \(|Opera\/\d|(curl|Wget|python-requests|PostmanRuntime|okhttp|Go-http-client)\/\d+\.\d)/i
-const VN_PHONE = /^(\+?84|0)[35789]\d{8}$/
-const MST_BRANCH = /^\d{10}-\d{3}$/
-const VN_AMOUNT = /^-?\d[\d.,]*\s*(đ|₫|vnd|đồng|tỷ|tỉ|triệu|tr|nghìn|ngàn)$/iu
 const PORT = /^:\d{2,5}$/
 const ESCAPED = /&(#\d+|#x[0-9a-f]+|[a-z]+\d*);|\\u(\{[0-9a-f]+\}|[0-9a-f]{4})/i
 
@@ -55,6 +52,18 @@ function isJson(text) {
   if (!/^[[{]/.test(text)) return false
   try {
     JSON.parse(text)
+    return true
+  } catch {
+    return false
+  }
+}
+
+// TOML with a [table] header or several key = value lines, as in Cargo.toml or pyproject.toml.
+function isToml(text) {
+  if (!/^\s*\[[\w."' -]+\]\s*$/m.test(text) && (text.match(/^\s*[\w."-]+\s*=\s*\S/gm) ?? []).length < 2) return false
+  if (guessConfigFormat(text) !== 'toml') return false
+  try {
+    readValue(text, 'toml')
     return true
   } catch {
     return false
@@ -113,22 +122,15 @@ function isBase64Text(text) {
   }
 }
 
-// A 12-digit citizen ID: a province code, a sex/century digit and a birth year not in the future.
-function isCccd(text) {
-  if (!/^\d{12}$/.test(text)) return false
-  const { valid } = parseCccd(text)
-  return valid
-}
-
 export function detect(value) {
   const text = value.trim()
   if (!text) return null
+  if (hasAnsi(value)) return 'ansi'
   if (HIDDEN.test(value)) return 'chars'
   if (CURL.test(text)) return 'curl'
   if (DOCKER_RUN.test(text)) return 'docker'
   if (SSH_KEY.test(text) && !/PRIVATE KEY/.test(text)) return 'sshkey'
   if (OTPAUTH.test(text)) return 'totp'
-  if (EMV_QR.test(text)) return 'vietqr'
   if (PEM.test(text) && !/PRIVATE KEY/.test(text)) return 'cert'
   if (BCRYPT.test(text)) return 'bcrypt'
   if (DATA_URI.test(text)) return 'image'
@@ -137,8 +139,6 @@ export function detect(value) {
   if (JWT.test(text)) return 'jwt'
   if (UUID.test(text) || ULID.test(text)) return 'ids'
   if (USER_AGENT.test(text) && !text.includes('\n')) return 'useragent'
-  if (VN_PHONE.test(text.replace(/[\s.]/g, '')) || MST_BRANCH.test(text) || isCccd(text)) return 'vnid'
-  if (VN_AMOUNT.test(text)) return 'numwords'
   if (PORT.test(text)) return 'ports'
   if (IPV4_CIDR.test(text) || IPV6_CIDR.test(text)) return 'cidr'
   if (VERSION_OR_RANGE.test(text)) return 'semver'
@@ -152,6 +152,7 @@ export function detect(value) {
   if (DURATION.test(text) && /\d/.test(text)) return 'units'
   if (text.includes('\n') && YAML_KEY.test(text) && isYaml(text)) return 'yaml'
   if (isEnv(text)) return 'env'
+  if (isToml(text)) return 'toml'
   if (isCsv(text)) return 'csv'
   if (URL_LIKE.test(text)) return 'url'
   if (isCron(text)) return 'cron'

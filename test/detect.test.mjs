@@ -73,7 +73,6 @@ test('recognises docker run, SSH keys, otpauth URIs, payment QR payloads, .env a
     ['sudo podman run --rm -it alpine sh', 'docker'],
     ['ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIbUDsY2Ge6v8s5SLT2HjaNVMlN7t+Mt9MFordDbmsA3 me@host', 'sshkey'],
     ['otpauth://totp/ACME:me?secret=JBSWY3DPEHPK3PXP', 'totp'],
-    ['00020101021238540010A00000072701240006970436011001234567890208QRIBFTTA530370454061500005802VN62220818Thanh toan don A126304C28D', 'vietqr'],
     ['DATABASE_URL=postgres://localhost/app\nDEBUG=true', 'env'],
     ['export API_KEY=abc', 'env'],
     ['^1.2.0', 'semver'],
@@ -84,22 +83,29 @@ test('recognises docker run, SSH keys, otpauth URIs, payment QR payloads, .env a
   for (const [value, tool] of cases) assert.equal(detect(value), tool, value)
 })
 
-test('recognises User-Agents, Vietnamese IDs and phone numbers, amounts and ports', () => {
+test('recognises User-Agents and ports', () => {
   const cases = [
     ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36', 'useragent'],
     ['User-Agent: curl/8.7.1', 'useragent'],
-    ['0987 654 321', 'vnid'],
-    ['+84912345678', 'vnid'],
-    ['079303001234', 'vnid'],
-    ['0100109106-001', 'vnid'],
-    ['150.000đ', 'numwords'],
-    ['1,5 tỷ', 'numwords'],
-    ['2 triệu', 'numwords'],
     [':5432', 'ports'],
-    // Still timestamps: not a mobile prefix, and 12 digits that are no citizen ID.
+    // Still timestamps.
     ['1700000000', 'time'],
     ['1700000000000', 'time']
   ]
   for (const [value, tool] of cases) assert.equal(detect(value), tool, value)
-  assert.notEqual(detect('123456789012'), 'vnid')
+})
+
+test('recognises terminal output with colour codes', () => {
+  assert.equal(detect('\x1b[32m✓\x1b[0m 12 passed\n\x1b[31m✗\x1b[0m 1 failed'), 'ansi')
+  assert.equal(detect('\\x1b[1;33mWARN\\x1b[0m disk almost full'), 'ansi')
+  assert.equal(detect('{"a": 1}'), 'json')
+})
+
+test('recognises TOML', () => {
+  assert.equal(detect('[package]\nname = "app"\nversion = "0.1.0"'), 'toml')
+  assert.equal(detect('title = "Blog"\nbaseURL = "/"'), 'toml')
+  // Still .env, YAML and plain text.
+  assert.equal(detect('DATABASE_URL=postgres://localhost/app\nDEBUG=true'), 'env')
+  assert.equal(detect('name: app\nreplicas: 2\nports:\n  - 80'), 'yaml')
+  assert.equal(detect('a = 1'), null)
 })

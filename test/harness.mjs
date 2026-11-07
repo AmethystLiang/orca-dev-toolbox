@@ -24,14 +24,27 @@ const TOKENS = {
   }
 }
 
-function frameDocument(theme) {
+// Orca's frame shell defines orca.storage; this one keeps values in `storage`, an object the
+// test owns, so a second openPanel with the same object sees what the first saved.
+function storageShim(storage) {
+  return `<script>(function () {
+    var data = ${JSON.stringify(storage).replace(/</g, '\\u003c')}
+    window.orca = { storage: {
+      get: function (key) { return Promise.resolve(Object.prototype.hasOwnProperty.call(data, key) ? data[key] : null) },
+      set: function (key, value) { data[key] = value; console.log('orca.storage.set ' + JSON.stringify([key, value])); return Promise.resolve() }
+    } }
+  })()</script>\n`
+}
+
+function frameDocument(theme, storage) {
   const tokens = Object.entries(TOKENS[theme]).map(([name, value]) => `--orca-${name}:${value};`).join('')
   return (
     `<!doctype html>\n<html class="${theme}">\n<head>\n<meta charset="utf-8">\n` +
     `<meta http-equiv="Content-Security-Policy" content="${CSP}">\n` +
     `<style id="orca-design-tokens">:root{${tokens}}</style>\n` +
     `<script>document.addEventListener('securitypolicyviolation', function (e) {
-      console.error('CSP violation: ' + e.violatedDirective + ' ' + e.blockedURI) })</script>\n</head>\n${PANEL_HTML}`
+      console.error('CSP violation: ' + e.violatedDirective + ' ' + e.blockedURI) })</script>\n` +
+    (storage ? storageShim(storage) : '') + `</head>\n${PANEL_HTML}`
   )
 }
 
@@ -56,23 +69,28 @@ export async function launch() {
   }
 }
 
-/** A panel `width` px wide, as in Orca's right sidebar. */
-export async function openPanel(browser, { theme = 'light', width = 360, height = 760 } = {}) {
+/** A panel `width` px wide, as in Orca's right sidebar; `storage` stands in for orca.storage. */
+export async function openPanel(browser, { theme = 'light', width = 360, height = 760, storage } = {}) {
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2 })
   const errors = []
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text())
+    const saved = message.text().match(/^orca\.storage\.set (.*)$/s)
+    if (saved && storage) {
+      const [key, value] = JSON.parse(saved[1])
+      storage[key] = value
+    }
   })
   await page.setContent(HOST_PAGE)
-  await page.evaluate((srcdoc) => (document.getElementById('panel').srcdoc = srcdoc), frameDocument(theme))
+  await page.evaluate((srcdoc) => (document.getElementById('panel').srcdoc = srcdoc), frameDocument(theme, storage))
   let frame
   await page.waitForFunction(() => document.getElementById('panel').contentDocument === null)
   for (let i = 0; i < 50 && !frame; i++) {
     frame = page.frames().find((candidate) => candidate !== page.mainFrame())
     if (!frame) await page.waitForTimeout(20)
   }
-  await frame.waitForSelector('#search')
+  await frame.waitForSelector('#search', { state: 'attached' })
   return { page, frame, errors }
 }
 

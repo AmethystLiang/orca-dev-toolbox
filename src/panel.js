@@ -3,31 +3,17 @@
 import { detect } from './detect.js'
 import { GROUPS, searchTools, TOOLS } from './registry.js'
 import { icon } from './icons.js'
+import { load, save } from './store.js'
 import { h, set } from './ui.js'
 
 const RECENT_LIMIT = 3
 // What a pasted value is, where the tool's title does not say it.
-const LOOKS_LIKE = { jwt: 'a JWT', time: 'a timestamp', ids: 'a UUID', json: 'JSON', url: 'a URL', cron: 'a cron schedule', base64: 'Base64', color: 'a colour', number: 'a number', chmod: 'a file mode', escape: 'escaped text', curl: 'a curl command', cidr: 'an IP address', yaml: 'YAML', csv: 'CSV', sql: 'SQL', xml: 'XML', units: 'a size or duration', chars: 'hidden characters', cert: 'a certificate', bcrypt: 'a bcrypt hash', image: 'a data URI', cssunits: 'a CSS length', docker: 'a docker run command', sshkey: 'an SSH public key', totp: 'a 2FA secret URI', vietqr: 'a payment QR payload', env: 'environment variables', semver: 'a version', useragent: 'a User-Agent', vnid: 'a Vietnamese ID or phone number', numwords: 'an amount', ports: 'a port' }
+const LOOKS_LIKE = { jwt: 'a JWT', time: 'a timestamp', ids: 'a UUID', json: 'JSON', url: 'a URL', cron: 'a cron schedule', base64: 'Base64', color: 'a colour', number: 'a number', chmod: 'a file mode', escape: 'escaped text', curl: 'a curl command', cidr: 'an IP address', yaml: 'YAML', csv: 'CSV', sql: 'SQL', xml: 'XML', units: 'a size or duration', chars: 'hidden characters', cert: 'a certificate', bcrypt: 'a bcrypt hash', image: 'a data URI', cssunits: 'a CSS length', docker: 'a docker run command', sshkey: 'an SSH public key', totp: 'a 2FA secret URI', env: 'environment variables', semver: 'a version', useragent: 'a User-Agent', ports: 'a port', ansi: 'terminal output with colour codes', toml: 'TOML' }
 const byId = new Map(TOOLS.map((tool) => [tool.id, tool]))
 const built = new Map()
 
-// Opaque-origin frames may refuse storage; the panel works the same without it.
-const store = {
-  get(key) {
-    try {
-      return JSON.parse(localStorage.getItem(key))
-    } catch {
-      return null
-    }
-  },
-  set(key, value) {
-    try {
-      localStorage.setItem(key, JSON.stringify(value))
-    } catch {}
-  }
-}
-let recent = (store.get('recent') ?? []).filter((id) => byId.has(id))
-let pinned = (store.get('pinned') ?? []).filter((id) => byId.has(id))
+let recent = []
+let pinned = []
 let current = null
 
 const search = h('input', {
@@ -117,8 +103,8 @@ function open(id, value) {
   home.hidden = true
   views.hidden = false
   recent = [id, ...recent.filter((other) => other !== id)].slice(0, RECENT_LIMIT)
-  store.set('recent', recent)
-  store.set('last', id)
+  save('recent', recent)
+  save('last', id)
   view.focus?.focus()
 }
 
@@ -129,7 +115,7 @@ function goHome() {
   search.value = ''
   renderList()
   search.focus()
-  store.set('last', null)
+  save('last', null)
 }
 
 search.addEventListener('input', renderList)
@@ -168,7 +154,7 @@ list.addEventListener('keydown', (event) => {
 back.addEventListener('click', goHome)
 pin.addEventListener('click', () => {
   pinned = pinned.includes(current) ? pinned.filter((id) => id !== current) : [...pinned, current]
-  store.set('pinned', pinned)
+  save('pinned', pinned)
   showPin()
 })
 document.addEventListener('keydown', (event) => {
@@ -177,6 +163,18 @@ document.addEventListener('keydown', (event) => {
 })
 
 renderList()
-const last = store.get('last')
-if (last && byId.has(last)) open(last)
-else search.focus()
+search.focus()
+
+// Saved state arrives after the first paint; a tool the user already opened meanwhile wins.
+Promise.all([load('recent'), load('pinned'), load('last')]).then(([savedRecent, savedPinned, last]) => {
+  const known = (ids) => (Array.isArray(ids) ? ids.filter((id) => byId.has(id)) : [])
+  recent = [...recent, ...known(savedRecent).filter((id) => !recent.includes(id))].slice(0, RECENT_LIMIT)
+  pinned = [...pinned, ...known(savedPinned).filter((id) => !pinned.includes(id))]
+  if (current) {
+    save('recent', recent)
+    save('pinned', pinned)
+    return showPin()
+  }
+  if (typeof last === 'string' && byId.has(last) && !search.value) open(last)
+  else renderList()
+})

@@ -31,7 +31,7 @@ const html = `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
-<!-- Bundles js-yaml, qrcode-generator (MIT) and bcryptjs (BSD-3-Clause); see THIRD-PARTY-NOTICES.md -->
+<!-- Bundles js-yaml, qrcode-generator (MIT), bcryptjs and smol-toml (BSD-3-Clause); see THIRD-PARTY-NOTICES.md -->
 <title>Dev Toolbox</title>
 <style>${css}</style>
 </head>

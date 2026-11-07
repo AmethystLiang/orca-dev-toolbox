@@ -1,4 +1,5 @@
 // Text utilities: identifier case, line operations and counts.
+import { countTokens } from './tokens.js'
 
 /** Splits identifiers and phrases into words: "parseHTTPResponse_v2" → parse, HTTP, Response, v2. */
 export function words(text) {
@@ -96,7 +97,7 @@ export function countText(text) {
     codePoints: [...text].length,
     whitespace: (text.match(/\s/g) ?? []).length,
     // A rough guide for LLM context: about four characters a token for English and code.
-    tokens: Math.ceil(text.length / 4),
+    tokens: countTokens(text).tokens,
     readingMinutes: wordCount / 230
   }
 }

@@ -1,5 +1,6 @@
 // Every tool the panel offers, in the order the home screen lists them within each group.
 // See CONTRIBUTING.md for adding a tool.
+import ansi from './views/ansi.js'
 import base64 from './views/base64.js'
 import bcrypt from './views/bcrypt.js'
 import changeCase from './views/case.js'
@@ -21,50 +22,57 @@ import http from './views/http.js'
 import ids from './views/ids.js'
 import image from './views/image.js'
 import json from './views/json.js'
+import jsondiff from './views/jsondiff.js'
 import jsonpath from './views/jsonpath.js'
 import jsx from './views/jsx.js'
 import jwt from './views/jwt.js'
 import lines from './views/lines.js'
 import mock from './views/mock.js'
 import number from './views/number.js'
-import numwords from './views/numwords.js'
 import password from './views/password.js'
 import ports from './views/ports.js'
 import qr from './views/qr.js'
+import redact from './views/redact.js'
 import regex from './views/regex.js'
 import semver from './views/semver.js'
 import sql from './views/sql.js'
 import sshkey from './views/sshkey.js'
 import stats from './views/stats.js'
 import time from './views/time.js'
+import toml from './views/toml.js'
+import tokens from './views/tokens.js'
 import totp from './views/totp.js'
 import transform from './views/transform.js'
 import types from './views/types.js'
 import units from './views/units.js'
 import url from './views/url.js'
 import useragent from './views/useragent.js'
-import vietqr from './views/vietqr.js'
-import vnid from './views/vnid.js'
 import xml from './views/xml.js'
 import yaml from './views/yaml.js'
 
 export const GROUPS = ['Inspect', 'Encode', 'Convert', 'Format', 'Generate', 'Text']
 
 export const TOOLS = [
-  jwt, cert, sshkey, useragent, vnid, time, cron, semver, http, ports, cidr, chars,
+  jwt, cert, sshkey, useragent, time, cron, semver, http, ports, cidr, chars,
   base64, image, url, escape,
-  yaml, csv, env, docker, types, curl, jsx, cssunits, units, color, number, chmod,
-  json, jsonpath, sql, xml,
-  password, ids, totp, hash, bcrypt, mock, qr, vietqr,
-  transform, changeCase, numwords, regex, diff, lines, stats
+  yaml, toml, csv, env, docker, types, curl, jsx, cssunits, units, color, number, chmod,
+  json, jsondiff, jsonpath, sql, xml, ansi,
+  password, ids, totp, hash, bcrypt, mock, qr,
+  redact, tokens, transform, changeCase, regex, diff, lines, stats
 ]
 
 /** Tools whose title, description or keywords contain every word of the query. */
 export function searchTools(query) {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean)
   if (!words.length) return TOOLS
+  const phrase = words.join(' ')
+  // A tool named exactly what was typed comes first, then names that start with it.
+  const rank = (tool) => {
+    const title = tool.title.toLowerCase()
+    return title === phrase ? 0 : title.startsWith(phrase) ? 1 : 2
+  }
   return TOOLS.filter((tool) => {
     const haystack = [tool.title, tool.description, tool.id, ...tool.keywords].join(' ').toLowerCase()
     return words.every((word) => haystack.includes(word))
-  })
+  }).sort((a, b) => rank(a) - rank(b))
 }
